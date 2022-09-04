@@ -29,7 +29,7 @@ public class BloomFilter {
      */
     public  List<Integer> genFilterVector(double numberOfHashFunctions, int bloomFilterSize, List<Integer> randomInts, List<Tag> tagList){
         List<Integer> bloomFilterVector = new ArrayList<>();
-        System.out.println(bloomFilterSize);
+
         // 布隆过滤器全部初始化为0
         for (int i = 0; i < bloomFilterSize; i++){
             bloomFilterVector.add(0);
@@ -117,7 +117,6 @@ public class BloomFilter {
         // 把每个segement(0字符串)压缩成l-bit, 如000...00(10个0)压缩成1010, l=4
         int l = (int)Math.ceil(Math.log(maxlen+1)/Math.log(2));
         int compLen = segments.length*l;
-        System.out.println("The compressed filter vector length:"+compLen);
 
         // TODO 修改! 对论文中的公式的理解
         double executionTime = 2.4 * segments.length / (96*1.0 / l);

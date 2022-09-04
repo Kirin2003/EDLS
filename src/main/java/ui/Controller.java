@@ -97,7 +97,7 @@ public class Controller implements IObserver{
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
                     advice();
-                } catch (IOException e) {
+                } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                 }
             }
@@ -152,7 +152,7 @@ public class Controller implements IObserver{
             public void actionPerformed(ActionEvent actionEvent) {
                 try {
                     advice();
-                } catch (IOException e) {
+                } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                 }
             }
@@ -174,7 +174,7 @@ public class Controller implements IObserver{
         warning.setVisible(true);
     }
 
-    public void advice() throws IOException {
+    public void advice() throws IOException, InterruptedException {
         // 检查是否输入配置,如果没有输入，提示用户输入；如果有输入，打印配置参数
         if(!r.propertiesChanged) {
             JOptionPane.showMessageDialog(ui.jFrame, "请输入配置");
@@ -186,10 +186,7 @@ public class Controller implements IObserver{
         advice+="参数配置如下：\n";
         advice+="标签ID长度："+96+" 类别ID长度："+32+" 缺失率："+r.missingRate+" 标签数目："+r.tagNum+" 平均每个类别的标签数量："+r.tagNumPerCid+"\n\n";
 
-        // 估算三个算法的时间，打印时间对比图
-        // CIP 和 ECIP 直接整体估计, ECLS需要创建对象仿真估计
-        int virtualCidNum = r.getVirtualCidNum();
-        int actualCidNum = r.getActualCidNum();
+        // 估算四个算法的时间，打印时间对比图
 
         TagRepository tagRepository = TagListGenerator.generateTagRepository(r.tagIDLength, r.categoryIDLength, r.tagNum, r.tagNumPerCid,r.getUnknownTagNumber(), r.getMissingTagNum());
         List<Tag> allTagList = tagRepository.getAllTagList();
@@ -201,9 +198,9 @@ public class Controller implements IObserver{
         Environment environment = new Environment(allTagList, expectedTagList, tagList,expectedTagList.size()/r.tagNumPerCid);
 
         if(r.isTagRandomlyDistributed) {
-            environment.createType1(r.repository_leng, r.repository_wid, r.readerInRow, r.readerInRow);
+            environment.createType1(r.repository_leng, r.repository_wid, r.readerInRow, r.readerInCol);
         } else {
-            environment.createType2(r.repository_leng, r.repository_wid, r.readerInRow, r.readerInRow);
+            environment.createType2(r.repository_leng, r.repository_wid, r.readerInRow, r.readerInCol);
         }
 
         Recorder recorder = new Recorder();
@@ -212,15 +209,19 @@ public class Controller implements IObserver{
         IdentifyTool cip = new CIP(logger,recorder,environment);
         cip.execute();
         double CIPtime = cip.recorder.totalExecutionTime*1.0/1000;
+        environment.reset();
         IdentifyTool ecip = new ECIP(logger,recorder,environment);
         ecip.execute();
         double ECIPtime = ecip.recorder.totalExecutionTime*1.0/1000;
+        environment.reset();
         IdentifyTool ecls = new ECLS(logger,recorder,environment);
         ecls.execute();
         double ECLStime = ecls.recorder.totalExecutionTime*1.0/1000;
+        environment.reset();
         IdentifyTool edls = new ECLS(logger,recorder,environment);
         edls.execute();
         double EDLStime = edls.recorder.totalExecutionTime*1.0/1000;
+        System.out.println(EDLStime);
 
 
         // 推荐时间最短的
@@ -242,16 +243,19 @@ public class Controller implements IObserver{
         advice+="估算时间：\n";
         advice += "CIP:"+String.format("%.4f",CIPtime)+"s\n";
         advice += "ECIP:"+String.format("%.4f",ECIPtime)+"s\n";
-        advice += "ECLS:"+String.format("%.4f",ECLStime)+"s\n\n";
+        advice += "ECLS:"+String.format("%.4f",ECLStime)+"s\n";
+        advice += "EDLS:"+String.format("%.4f",EDLStime)+"s\n\n";
 
         advice += "估算识别准确率：\n";
-        advice += "CIP:100%\n";
+        advice += "CIP：100%\n";
         advice += "ECIP：100%\n";
-        advice += "ECLS：100%\n\n";
+        advice += "ECLS：100%\n";
+        advice += "EDLS：100%\n\n";
 
         advice+="综合考虑时间和准确率，推荐算法："+algorithm+"\n";
+        System.out.println(advice);
 
-        JPython.Graphic(CIPtime, ECIPtime, ECLStime,advice);
+        JPython.Graphic(CIPtime, ECIPtime, ECLStime,EDLStime,advice);
         
     }
 

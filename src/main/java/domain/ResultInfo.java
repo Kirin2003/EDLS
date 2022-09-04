@@ -6,9 +6,9 @@ public class ResultInfo {
     /** 类别ID长度 */
     public  Integer categoryIDLength = 32;
     /** 缺失率 */
-    public  Double missingRate = 0.8;
+    public  Double missingRate = 0.95;
     /** 标签数目 */
-    public  Integer tagNum = 10000;
+    public  Integer tagNum = 5000;
 
     /** 是否随机分配*/
     public  Boolean isRandomAllocated = true;
@@ -19,7 +19,7 @@ public class ResultInfo {
     public int instanceNumber = 1;
 
     /** 意外标签占的比例*/
-    public Double unknownRate = 0.1;
+    public Double unknownRate = 0.0;
 
     /** 仓库长度*/
     public Integer repository_leng = 4000;
