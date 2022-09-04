@@ -2,7 +2,6 @@ package ui;
 
 import base.TagListGenerator;
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.config.Property;
 import protocals.*;
 import base.*;
 import domain.ResultInfo;
@@ -196,7 +195,6 @@ public class Controller implements IObserver{
 
         //Single Reader and Multi reader codes are almost same, we only give one reader for the environment
         Environment environment = new Environment(allTagList, expectedTagList, tagList,expectedTagList.size()/r.tagNumPerCid);
-
         if(r.isTagRandomlyDistributed) {
             environment.createType1(r.repository_leng, r.repository_wid, r.readerInRow, r.readerInCol);
         } else {
@@ -361,6 +359,16 @@ public class Controller implements IObserver{
         //开始模拟
         identifyTool.execute();
         output+=identifyTool.recorder.getAnalysis();
+
+        // 预警
+        String warningCid = r.preciousCid;
+        int warningNum = r.mostMissingCidNum;
+        if(identifyTool.recorder.missingCids.size() > warningNum) {
+            output += "预警！缺失数量超过"+warningNum+"\n\n";
+        }
+        if(identifyTool.recorder.missingCids.contains(warningCid)) {
+            output += "预警！类别："+warningCid+"缺失\n\n";
+        }
 
         ui.controlText.setText(output);
 

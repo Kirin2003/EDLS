@@ -37,7 +37,7 @@ public class ResultInfo {
     public boolean isTagRandomlyDistributed = true;
 
 
-    public Integer mostMissingTagNum = 80;
+    public Integer mostMissingCidNum = 10;
 
     public String preciousCid = "10101010101010101010101010101010";
 
@@ -113,6 +113,8 @@ public class ResultInfo {
         this.a = a;
 
     }
+
+
 
     @Override
     public String toString() {
