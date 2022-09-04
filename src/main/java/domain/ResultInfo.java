@@ -13,7 +13,7 @@ public class ResultInfo {
     /** 是否随机分配*/
     public  Boolean isRandomAllocated = true;
     /** 标签/类别ID */
-    public  Integer tagNumPerCid = 100;
+    public  Integer tagNumPerCid = 10;
 
     /**算法重复模拟次数*/
     public int instanceNumber = 1;
@@ -25,13 +25,13 @@ public class ResultInfo {
     public Integer repository_leng = 4000;
 
     /** 仓库宽度*/
-    public Integer repository_wid = 2000;
+    public Integer repository_wid = 1600;
 
     /** 每行的阅读器数目*/
-    public Integer readerInRow = 5;
+    public Integer readerInRow = 2;
 
     /** 每列的阅读器数目*/
-    public Integer readerInCol = 2;
+    public Integer readerInCol = 5;
 
     /** 标签随机分布/均匀分布*/
     public boolean isTagRandomlyDistributed = true;

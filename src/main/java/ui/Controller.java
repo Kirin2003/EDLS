@@ -361,14 +361,17 @@ public class Controller implements IObserver{
         output+=identifyTool.recorder.getAnalysis();
 
         // 预警
+        String message = "";
         String warningCid = r.preciousCid;
         int warningNum = r.mostMissingCidNum;
         if(identifyTool.recorder.missingCids.size() > warningNum) {
-            output += "预警！缺失数量超过"+warningNum+"\n\n";
+            message += "预警！缺失数量超过"+warningNum+"\n\n";
         }
         if(identifyTool.recorder.missingCids.contains(warningCid)) {
-            output += "预警！类别："+warningCid+"缺失\n\n";
+            message += "预警！类别："+warningCid+"缺失\n\n";
         }
+
+        JOptionPane.showMessageDialog(ui.jFrame, message);
 
         ui.controlText.setText(output);
 

@@ -6,6 +6,7 @@ import base.TagRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -272,6 +273,9 @@ public class Environment {
     public void reset() {
         for (Tag tag : expectedTagList) {
             tag.setActive(true);
+        }
+        for(Reader_M reader_m : getReaderList()) {
+            reader_m.recorder = new Recorder();
         }
     }
 
