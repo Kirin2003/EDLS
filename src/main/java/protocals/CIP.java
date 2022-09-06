@@ -86,9 +86,14 @@ public class CIP extends IdentifyTool{
         recorder.totalExecutionTime = maxTime2;
         logger.error("第二阶段结束, 所有阅读器的总时间:[ "+maxTime2+" ]ms");
 
+        double minCorrectRate = 1.0;
         for(Reader_M reader : readers) {
             recorder.actualCids.addAll(reader.recorder.actualCids);
+            recorder.eliminationTagNum += reader.recorder.eliminationTagNum;
+            double correctRate = reader.recorder.correctRate;
+            if (correctRate < minCorrectRate) minCorrectRate = correctRate;
         }
+        recorder.correctRate = minCorrectRate;
 
         for(Tag tag : environment.getExpectedTagList()) {
             String cid = tag.getCategoryID();
@@ -96,6 +101,15 @@ public class CIP extends IdentifyTool{
                 recorder.missingCids.add(cid);
             }
         }
+
+        Recorder recorder1 = environment.getReaderList().get(0).recorder;
+        System.out.println("总时间:"+recorder1.totalExecutionTime);
+        System.out.println("缺失率列表:"+recorder1.missingRateList);
+        System.out.println("执行时间列表:"+recorder1.executionTimeList);
+        System.out.println("识别类别列表:"+recorder1.recognizedCidNumList);
+        System.out.println("识别存在类别列表:"+recorder1.recognizedActualCidNumList);
+        System.out.println("识别缺失类别列表:"+recorder1.recognizedMissingCidNumList);
+
     }
 
 
@@ -132,7 +146,7 @@ public class CIP extends IdentifyTool{
         int readCidNumInOneRound = 0;
         Map<Integer, String> CidMap = new HashMap<>(); // 键为时隙, 值为编码之后的标签id
         Map<Integer, List<Tag>> slotToTagList = new HashMap<>(); // 键为时隙, 值为在这个时隙回应的标签列表(是存在的标签)
-        List<Tag> actualTagList = environment.getActualTagList();
+        List<Tag> actualTagList = reader_m.getCoverActualTagList();
         boolean flag = true; // 是否循环
         Set<String> expectedCidSet = new HashSet<>();
         Set<String> actualCidSet = new HashSet<>();
@@ -146,14 +160,11 @@ public class CIP extends IdentifyTool{
         int actualCidNum = actualCidSet.size();
         logger.info("期望识别的类别数:[ "+unReadCidNum+" ],实际存在的类别数:[ "+actualCidNum+" ],缺失的类别数:[ "+(unReadCidNum-actualCidNum)+" ]");
         double missRate = 1-actualCidNum*1.0/unReadCidNum;
-        recorder1.missingRateList.add(missRate);
+
 
         while(flag) {
-            logger.info("################### 第 " + recorder1.roundCount + " 轮#######################");
+            logger.info("################### 第 " + (recorder1.roundCount+1) + " 轮#######################");
             flag = false;
-
-
-
             /**
              * 1 优化时隙
               */
@@ -224,23 +235,23 @@ public class CIP extends IdentifyTool{
                     logger.info("时隙: ["+slotId+"] 冲突时隙!");
                 }
             }
-
-            actualCidNum -= readCidNumInOneRound;
-            missRate = 1-actualCidNum*1.0/unReadCidNum;
             recorder1.missingRateList.add(missRate);
+            actualCidNum -= readCidNumInOneRound;
+            unReadCidNum -= readCidNumInOneRound;
+            if(unReadCidNum != 0) {
+                missRate = 1-actualCidNum*1.0/unReadCidNum;
+            } else{
+                missRate = 0;
+            }
+
+
 
             recorder1.recognizedActualCidNumList.add(readCidNumInOneRound);
             recorder1.recognizedCidNumList.add(readCidNumInOneRound);
             recorder1.recognizedMissingCidNumList.add(0); // cip只识别存在标签,不识别缺失标签,最后没有识别到的标签都认为是缺失标签
             recorder1.recognizedActualCidNum += readCidNumInOneRound;
             recorder1.recognizedCidNum += readCidNumInOneRound;
-            logger.info("第 ["+recorder1.roundCount+"] 轮,识别到的存在的类别数: ["+readCidNumInOneRound + "] 缺失的类别数: [0], 花费的时间:["+executionTimeOneRound+"] ms");
-            unReadCidNum -= readCidNumInOneRound;
-            // 清零, 以便继续循环识别标签类别
-            recorder1.roundCount ++;
-            readCidNumInOneRound = 0;
-            CidMap.clear();
-            slotToTagList.clear();
+            logger.info("第 ["+(recorder1.roundCount+1)+"] 轮,识别到的存在的类别数: ["+readCidNumInOneRound + "] 缺失的类别数: [0], 花费的时间:["+executionTimeOneRound+"] ms");
 
             if(readCidNumInOneRound == 0) {
                 repeated ++;
@@ -250,6 +261,13 @@ public class CIP extends IdentifyTool{
             if(repeated >= 2) {
                 break;
             }
+            // 清零, 以便继续循环识别标签类别
+            recorder1.roundCount ++;
+            readCidNumInOneRound = 0;
+            CidMap.clear();
+            slotToTagList.clear();
+
+
 
         }
 
@@ -269,9 +287,10 @@ public class CIP extends IdentifyTool{
         recorder1.recognizedMissingCidNum +=missingCidNum;
         recorder1.recognizedCidNum += missingCidNum;
         logger.info("最后一轮识别结束, 所有没有被识别为存在的标签类别认为不存在, 识别缺失的类别数: ["+missingCidNum + "]");
-        recorder1.recognizedMissingCidNumList.set(recorder1.roundCount-1,missingCidNum);
+        recorder1.recognizedMissingCidNumList.set(recorder1.recognizedMissingCidNumList.size()-1,missingCidNum);
         int recognizedCidNumLastRound = recorder1.recognizedCidNumList.get(recorder1.roundCount-1)+recorder1.missingCids.size();
-        recorder1.recognizedCidNumList.set(recorder1.roundCount-1,recognizedCidNumLastRound);
+        recorder1.recognizedCidNumList.set(recorder1.recognizedCidNumList.size()-1,recognizedCidNumLastRound);
+        recorder1.correctRate = recorder1.recognizedActualCidNum * 1.0 / recorder1.recognizedCidNum;
 
         // 总时间
 //        recorder1.totalExecutionTime = calculateTime(recorder1.recognizedCidNum);

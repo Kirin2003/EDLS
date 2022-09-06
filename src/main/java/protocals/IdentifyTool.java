@@ -15,7 +15,7 @@ public abstract class IdentifyTool implements ISubject {
     public Logger logger;
     public Recorder recorder; //记录器
 
-    Environment environment; // 环境
+    public Environment environment; // 环境
     int instanceNum; // 模拟次数
 
 

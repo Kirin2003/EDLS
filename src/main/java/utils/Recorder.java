@@ -1,5 +1,7 @@
 package utils;
 
+import base.Tag;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -7,7 +9,7 @@ import java.util.Set;
 
 public class Recorder {
     public double totalExecutionTime = 0; // 总执行时间
-
+    public double correctRate = 0.0;//识别准确率
     public int roundCount = 0; // 总轮数
     public int slotCount = 0; // 总时隙数
 
@@ -29,6 +31,7 @@ public class Recorder {
     public List<Integer> roundSlotCountList = new ArrayList<>(); // 每一轮的时隙长度
     public Set<String> missingCids = new HashSet<>(); // 识别到的缺失标签列表
     public Set<String> actualCids = new HashSet<>(); // 识别到的存在标签列表
+    public List<Tag> eliminateTagList = new ArrayList<>();
 
     public List<Integer> recognizedTagNumList = new ArrayList<>();//每一轮的识别标签的总数
 

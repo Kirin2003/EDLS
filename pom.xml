@@ -29,6 +29,28 @@
             <artifactId>forms_rt</artifactId>
             <version>7.0.3</version>
         </dependency>
+        <dependency>
+            <groupId>org.jfree</groupId>
+            <artifactId>jfreechart</artifactId>
+            <version>1.0.19</version>
+        </dependency>
+        <dependency>
+            <groupId>com.weblookandfeel</groupId>
+            <artifactId>weblaf-ui</artifactId>
+            <version>${weblaf.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.weblookandfeel</groupId>
+            <artifactId>weblaf-plugin</artifactId>
+            <version>${weblaf.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.weblookandfeel</groupId>
+            <artifactId>weblaf-ninepatch-editor</artifactId>
+            <version>${weblaf.version}</version>
+        </dependency>
     </dependencies>
 
     <properties>

@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * A class to simulate the environment
@@ -63,10 +64,12 @@ public class Environment {
         this.setReaderX(readersInRow);
         this.setReaderY(readersInColumn);
 
+        Long seed = System.currentTimeMillis();
+        Random r = new Random(seed);
         //Random allocation of tags
         for (Tag tag : allTagList) {
-            double xx = Math.random() * length;
-            double yy = Math.random() * width;
+            double xx = r.nextInt((int)length) ;
+            double yy = r.nextInt((int)width) ;
             Location location = new Location(xx, yy);
             tag.setLocation(location);
         }
@@ -158,25 +161,9 @@ public class Environment {
             reader.coveredAllTagList = reader.getReaderMOwnTagList(allTagList);
             reader.realReply = reader.coverActualTagList.size();
         }
-
-//        //  设置,覆盖范围,针对expectedTagList，实际可能不存在
-//        for(Reader_M reader : readerMList)
-//        {
-//            int realReply =0;
-//            for(Tag tag : getExpectedTagList())
-//            {
-//                double x = reader.getLocation().getX() - tag.getLocation().getX();
-//                double y = reader.getLocation().getY() - tag.getLocation().getY();
-//                if(reader.getCoverActualTagList()== null) { reader.setCoverActualTagList(new ArrayList<Tag>());  }
-//                if(x * x + y * y < reader.getReadingRadius() * reader.getReadingRadius())
-//                {
-//                    reader.coverActualTagList.add(tag);
-//                    if(getActualTagList().contains(tag)) { realReply++; }
-//                }
-//            }
-//            reader.realReply = realReply;
-//        }
     }
+
+
 
     /**
      * Displays information about the creation of environment, but it is suitable for output in the algorithm
@@ -250,7 +237,6 @@ public class Environment {
         readerList = new ArrayList<>();
 
         double readerRadius = Math.sqrt(length * length / x / x + width * width / y / y) / 2;
-
         for (int yy = 0; yy < y; yy++){
             for (int xx = 0; xx < x; xx++){
                 Reader_M reader = new Reader_M(yy * x + xx + 1);
@@ -273,9 +259,6 @@ public class Environment {
     public void reset() {
         for (Tag tag : expectedTagList) {
             tag.setActive(true);
-        }
-        for(Reader_M reader_m : getReaderList()) {
-            reader_m.recorder = new Recorder();
         }
     }
 

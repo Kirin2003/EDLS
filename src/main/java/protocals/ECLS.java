@@ -10,7 +10,7 @@ import java.util.*;
  * @author Kirin Huang
  * @date 2022/8/8 下午10:19
  */
-public class ECLS extends IdentifyTool{
+public class ECLS extends IdentifyTool {
     /**
      * 哈希函数的个数, 用于意外标签去除阶段
      */
@@ -101,6 +101,15 @@ public class ECLS extends IdentifyTool{
                 recorder.missingCids.add(cid);
             }
         }
+
+        System.out.println(" ");
+        Recorder recorder1 = environment.getReaderList().get(0).recorder;
+        System.out.println("总时间:"+recorder.totalExecutionTime);
+        System.out.println("缺失率列表:"+recorder1.missingRateList);
+        System.out.println("执行时间列表:"+recorder1.executionTimeList);
+        System.out.println("识别类别列表:"+recorder1.recognizedCidNumList);
+        System.out.println("识别存在类别列表:"+recorder1.recognizedActualCidNumList);
+        System.out.println("识别缺失类别列表:"+recorder1.recognizedMissingCidNumList);
     }
 
     /**
@@ -171,7 +180,7 @@ public class ECLS extends IdentifyTool{
             expectedCidSet.add(tag.getCategoryID());
         }
         int expectedCidNum = expectedCidSet.size();
-        logger.debug("该阅读器需要识别的标签数=[ "+expectedCidNum+" ] 该阅读器识别范围内真实存在的类别数=[ "+expectedActualCidNum+" ]");
+        logger.info("该阅读器需要识别的类别数=[ "+expectedCidNum+" ] 该阅读器识别范围内真实存在的类别数=[ "+expectedActualCidNum+" ]");
         double missRate = (expectedCidNum - expectedActualCidNum) * 1.0 / expectedCidNum;
 
 
@@ -181,9 +190,7 @@ public class ECLS extends IdentifyTool{
         while (recognizedCidNum < expectedCidNum) { // 当识别数目小于期望标签数目时一直循环
             ++recorder1.roundCount;
             recorder1.missingRateList.add( missRate);
-            System.out.println();
             logger.info("################### 第 "+recorder1.roundCount+" 轮 #######################");
-            System.out.println();
 
             // CLS需要一个随机数, SFMTI需要两个随机数
             int random1 = (int) (100 * Math.random());
@@ -207,6 +214,7 @@ public class ECLS extends IdentifyTool{
             frameSize = CLS_OptimizeFrame(missRate,expectedCidNum,recognizedCidNum);
             useCLS = true;
 
+
             /**
              * 2 阅读器为标签分配时隙, 生成filter vector, expMap
              */
@@ -215,10 +223,10 @@ public class ECLS extends IdentifyTool{
             List<Integer> filterVector;
             if (useCLS){ // 使用cls算法生成filter vector
                 filterVector = this.CLS_genFilterVector(frameSize, random1, expectedTagList, beforeFilter, afterFilter, recorder1);
-                logger.warn("使用CLS");
+                logger.info("使用CLS");
             }else { // 使用sfmti算法生成filter vector
                 filterVector = this.SFMTI_genFilterVector(frameSize, random1, random2, expectedTagList, beforeFilter, afterFilter, recorder1);
-                logger.warn("使用SFMTI");
+                logger.info("使用SFMTI");
             }
 
             // X是解决了冲突的冲突时隙和单时隙
@@ -313,7 +321,7 @@ public class ECLS extends IdentifyTool{
             }
 
             // 打印resultMap和actualSlotToCidSet
-            logger.debug("打印resultMap：");
+            logger.debug("打印resultMap和actualSlotToCidSet：");
             for(Integer slot : resultMap.keySet()) {
                 List<Tag> value = resultMap.get(slot);
                 Set<String> tagstr = actualSlotToCidSet.get(slot);
@@ -346,15 +354,17 @@ public class ECLS extends IdentifyTool{
                         }
                         // 预期有标签回应(filterVector.get(i) > 0), 实际没有标签回应(slotResponseList.size() == 0), 全部缺失!
                         Set<String> str = expSlotToCidSet.get(i);
-                        for (Tag tag : expMap.get(i)){
-                            tag.setActive(false);
+                        for (Tag tag : expectedTagList){
+                            if (expSlotToCidSet.get(i).contains(tag.getCategoryID())){
+                                tag.setActive(false);
+                            }
                         }
                         recognizedCidNum += str.size();
 
                         recognizedCidNumCurrentRound += str.size();
                         recognizedMissCidNumCurrentRound+=str.size();
                         recorder1.missingCids.addAll(str);
-                        logger.debug("时隙=" + (i) + " 结果=空时隙, 缺失类别列表="+str.toString());
+                        logger.info("时隙=" + (i) + " 结果=空时隙, 缺失类别列表="+str.toString());
                         recorder1.emptySlotCount ++; //统计为空Slot的总数
 
                     } else if (actualSlotToCidSet.get(i).size() == 1) { // 同1个类别的标签回应
@@ -362,9 +372,12 @@ public class ECLS extends IdentifyTool{
                         if (useCLS){
                             if(filterVector.get(i) == 1){ // use CLS, 预期是1, 结果是1
                                 recorder1.singletonSlotCount ++;
-                                logger.debug("时隙=" + (i) + " 结果=单时隙" + actualSlotToCidSet.get(i).toString());
-                                for(Tag tag : expMap.get(i)) {
-                                    tag.setActive(false);
+                                logger.info("时隙=" + (i) + " 结果=单时隙" + actualSlotToCidSet.get(i).toString());
+                                String cid1 = expMap.get(i).get(0).getCategoryID();
+                                for(Tag tag : expectedTagList) {
+                                    if(tag.getCategoryID() .equals( cid1)) {
+                                        tag.setActive(false);
+                                    }
                                 }
                                 recognizedCidNumCurrentRound++;
                                 recognizedCidNum ++;
@@ -385,17 +398,14 @@ public class ECLS extends IdentifyTool{
                                         str.add(tag.getCategoryID());
                                 }
                                 recorder1.noResult ++;
-                                logger.debug("时隙=" + (i) + " 结果=无法识别 " + actualSlotToCidSet.get(i).toString()+":其他="+str);
+                                logger.info("时隙=" + (i) + " 结果=无法识别 " + actualSlotToCidSet.get(i).toString()+":其他="+str);
                                 collisionTagListMap.put(collisionTagListIndex++, tmplist);
 
                             }
                         }else{ // use SFMTI, 只有一个标签回应必然是单时隙, 不可能是有缺失的冲突时隙, 因为SFMTI已经解决冲突了, 没解决的设置为filterVector.get(i) == 0
-//                            for(Tag tag : expMap.get(i))
-//                            {
-//                                tag.setActive(false);
-//                            }
-                            // TODO
-                            for(Tag tag : reader_m.coveredAllTagList) {
+//
+
+                            for(Tag tag : expectedTagList) {
                                 if(tag.getCategoryID() .equals( expMap.get(i).get(0).getCategoryID())) {
                                     tag.setActive(false);
                                 }
@@ -403,7 +413,7 @@ public class ECLS extends IdentifyTool{
 
                             recognizedCidNumCurrentRound++;
                             recognizedCidNum ++;
-                            logger.debug("时隙="+(i) + " 结果=单时隙 "+actualSlotToCidSet.get(i).toString());
+                            logger.info("时隙="+(i) + " 结果=单时隙 "+actualSlotToCidSet.get(i).toString());
                             recorder1.singletonSlotCount ++;
                             recorder1.actualCids.add(expMap.get(i).get(0).getCategoryID());
                             recognizedActualCidNumCurrentRound ++;
@@ -419,7 +429,7 @@ public class ECLS extends IdentifyTool{
                         }
 
 
-                        logger.debug("时隙=" + (i) + " 结果=冲突时隙 选择这一时隙的类别列表=" + actualSlotToCidSet.get(i).toString());
+                        logger.info("时隙=" + (i) + " 结果=冲突时隙 选择这一时隙的类别列表=" + actualSlotToCidSet.get(i).toString());
                         recorder1.collisionSlotCount++; //统计为collision的总数
 
                         // 期望标签的映射, 即便有缺失的, 不知道是哪个缺失, 这里把期望标签全部记录到了冲突时隙-标签列表中
@@ -430,18 +440,18 @@ public class ECLS extends IdentifyTool{
 
                 }else{ // 期望中没有标签回应
                     // 空时隙
-                    logger.debug("空时隙"+i);
+                    logger.info("空时隙"+i);
                 }
             }
             recorder1.roundSlotCountList.add(roundSlotCount);
 
-            logger.info("本轮filter vector的长度: " + filterVector.size());
-            logger.info("本轮识别完成后filter vector的总长度: " + filterVectorLength);
-            logger.info("本轮识别完成后将2-冲突时隙调和成功的时隙数: " + resolvedFromTwoCollision);
-            logger.info("本轮识别完成后将3-冲突时隙调和成功的时隙数:" + resolvedFromThreeCollision);
-            logger.info("本轮阅读器识别到存在的类别数:"+recognizedActualCidNumCurrentRound + " 缺失的类别数:"+recognizedMissCidNumCurrentRound);
-            logger.info("本轮时隙数: " + roundSlotCount);
-            logger.info("本轮识别结束后时隙总数 : " + slotSumNum);
+//            logger.info("本轮filter vector的长度: " + filterVector.size());
+//            logger.info("本轮识别完成后filter vector的总长度: " + filterVectorLength);
+//            logger.info("本轮识别完成后将2-冲突时隙调和成功的时隙数: " + resolvedFromTwoCollision);
+//            logger.info("本轮识别完成后将3-冲突时隙调和成功的时隙数:" + resolvedFromThreeCollision);
+//            logger.info("本轮阅读器识别到存在的类别数:"+recognizedActualCidNumCurrentRound + " 缺失的类别数:"+recognizedMissCidNumCurrentRound);
+//            logger.info("本轮时隙数: " + roundSlotCount);
+//            logger.info("本轮识别结束后时隙总数 : " + slotSumNum);
 
             logger.debug("缺失率: "+missRate);
             logger.debug("帧长: " + frameSize+"; filter vector长度: " + filterVector.size() + ";");
@@ -462,6 +472,11 @@ public class ECLS extends IdentifyTool{
                 missRate = (expectedCidNum - expectedActualCidNum - recorder1.recognizedMissingCidNum)*1.0 / (expectedCidNum - recognizedCidNum);
 //                missRate = 1.0*((expectedTagNum - recognizedTagNum) - (coveredActualTagList.size() - (recognizedTagNum-recognizedMissingTag.size()))) / (expectedTagNum - recognizedTagNum);
             }
+
+            // 清零
+            recognizedActualCidNumCurrentRound = 0;
+            recognizedMissCidNumCurrentRound = 0;
+            recognizedCidNumCurrentRound = 0;
         }
 
 
@@ -747,7 +762,7 @@ public class ECLS extends IdentifyTool{
             }
         }
         logger.info("在使用SFMTI之前, filter vector的时隙类型 0,1,2,3,>3: 0:["+before[0]+"个] 1:["+before[1]+"个]"+" 2:["+before[2]+"个] 3:["+before[3]+"个] >3:["+before[4]+"个]");
-
+        int beforeSize = filterVector.size();
         logger.info("生成 Filter Vector: ");
         int oriFilterVectorSize = filterVector.size();
         for (int k = 0; k < oriFilterVectorSize; k++){
@@ -847,7 +862,7 @@ public class ECLS extends IdentifyTool{
         }
 
 
-        double t1= sfmtiRoundExecutionTime(filterVector, after[1]+after[2]+after[3]);
+        double t1= sfmtiRoundExecutionTime(beforeSize, after[1]+after[2]+after[3]);
         recorder1.totalExecutionTime += t1;
         recorder1.executionTimeList.add(t1);
         logger.info("本轮识别时间: " + t1);
@@ -861,12 +876,12 @@ public class ECLS extends IdentifyTool{
 
     /** 一轮SFMTI的执行时间
      *
-     * @param filterVector
+     * @param beforeSize
      * @param roundSlots
      */
-    public double sfmtiRoundExecutionTime(List<Integer> filterVector, int roundSlots){
+    public double sfmtiRoundExecutionTime(int beforeSize, int roundSlots){
         // T = ceil(2f/96)*t_tag+(N1+2N2+3N3)*t_{short}, N1, N2, N3为可以调和的2-collision slots 和 3-collision slots数目, 用roundSlots记录
-        double t1 = (double) Math.ceil(2.0 * filterVector.size()/96) * 2.4 + roundSlots * 0.4;
+        double t1 = (double) Math.ceil(beforeSize * 2.0 /96) * 2.4 + roundSlots * 0.4;
         return t1;
     }
 

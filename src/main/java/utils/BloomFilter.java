@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 
 public class BloomFilter {
@@ -18,6 +19,40 @@ public class BloomFilter {
 
     }
 
+    public  List<Integer> genFilterVector(double numberOfHashFunctions, int bloomFilterSize, List<Integer> randomInts, List<Tag> tagList){
+        List<Integer> bloomFilterVector = new ArrayList<>();
+
+        // 布隆过滤器全部初始化为0
+        for (int i = 0; i < bloomFilterSize; i++){
+            bloomFilterVector.add(0);
+        }
+
+        // 将每一个期望标签映射到布隆过滤器中, 当多个期望标签映射到同一个过滤器位置, 也设置为1
+        if (numberOfHashFunctions == 1) {
+            int random = randomInts.get(0);
+            for (Tag tag : tagList) {
+                if (tag.isActive()) {
+                    int index = tag.hash2(bloomFilterSize, random);
+                    bloomFilterVector.set(index, 1);
+                }
+            }
+        } else {
+            for (int i = 0; i < numberOfHashFunctions; i++) {
+                // TODO
+                int r = randomInts.get(i) % bloomFilterSize;
+                for (Tag tag : tagList) {
+                    if (tag.isActive()) {
+                        int index = tag.hash2(bloomFilterSize, r);
+                        bloomFilterVector.set(index, 1);
+
+                    }
+                }
+            }
+        }
+
+        return bloomFilterVector;
+    }
+
 
     /**
      * Method that generates a bloom filter at the reader side. Maps the expected tag list
@@ -27,7 +62,7 @@ public class BloomFilter {
      * @param randomInts
      * @return
      */
-    public  List<Integer> genFilterVector(double numberOfHashFunctions, int bloomFilterSize, List<Integer> randomInts, List<Tag> tagList){
+    public  List<Integer> genFilterVector2(double numberOfHashFunctions, int bloomFilterSize, List<Integer> randomInts, List<Tag> tagList){
         List<Integer> bloomFilterVector = new ArrayList<>();
 
         // 布隆过滤器全部初始化为0
@@ -62,7 +97,46 @@ public class BloomFilter {
     }
 
 
-    public  int membershipCheck(List<Integer> bloomFilterVector, List<Tag> tagList, int numberOfHashFunctions, List<Integer> randomInts, int bloomFilterSize){
+    public  int membershipCheck(Recorder recorder, List<Integer> bloomFilterVector, List<Tag> tagList, int numberOfHashFunctions, List<Integer> randomInts, int bloomFilterSize){
+
+
+        // 消除意外标签, 在未压缩的布隆过滤器中, 如果标签对应的数不为1, 是意外标签
+        // 此处, 没有写压缩布隆过滤器的代码, 只是计算了压缩布隆过滤器的长度, 便于计算时间, 消除意外标签是通过未压缩的布隆过滤器实现的
+        int eliminatedTagNum = 0;
+        for (Tag tag : tagList) {
+            // 检查意外标签, 并去除
+            if (numberOfHashFunctions == 1) {
+                int randomInt = randomInts.get(0);
+                if (tag.isActive()) {
+                    int index = tag.hash2(bloomFilterSize, randomInt);
+                    if (bloomFilterVector.get(index) == 0) {
+                        tag.setActive(false);
+
+                        eliminatedTagNum++;
+                        recorder.eliminateTagList.add(tag);
+                    }
+                }
+            } else {
+                for (int i = 0; i < numberOfHashFunctions; i++) {
+                    int r = randomInts.get(i) % bloomFilterSize;
+                    if (tag.isActive()) {
+                        int index = tag.hash2(bloomFilterSize, r);
+                        if (bloomFilterVector.get(index) == 0) {
+                            tag.setActive(false);
+                            eliminatedTagNum++;
+                            recorder.eliminateTagList.add(tag);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        logger.error("消除的意外标签: [" + eliminatedTagNum + "]");
+        recorder.eliminationTagNum += eliminatedTagNum;
+        return eliminatedTagNum;
+    }
+
+    public  int membershipCheck2(Recorder recorder,List<Integer> bloomFilterVector, List<Tag> tagList, int numberOfHashFunctions, List<Integer> randomInts, int bloomFilterSize){
 
 
         // 消除意外标签, 在未压缩的布隆过滤器中, 如果标签对应的数不为1, 是意外标签
@@ -77,6 +151,7 @@ public class BloomFilter {
                     int index = tag.hash1(bloomFilterSize, randomInt);
                     if (bloomFilterVector.get(index) == 0) {
                         tag.setActive(false);
+                        recorder.eliminateTagList.add(tag);
                         eliminatedTagNum++;
                     }
                 }
@@ -88,6 +163,7 @@ public class BloomFilter {
                         if (bloomFilterVector.get(index) == 0) {
                             tag.setActive(false);
                             eliminatedTagNum++;
+                            recorder.eliminateTagList.add(tag);
                             break;
                         }
                     }
@@ -95,8 +171,10 @@ public class BloomFilter {
             }
         }
         logger.error("消除的意外标签: [" + eliminatedTagNum + "]");
+        recorder.eliminationTagNum += eliminatedTagNum;
         return eliminatedTagNum;
     }
+
 
     public double membershipCheckExecutionTime(List<Integer> originalBloomFilterVector) {
         /*计算压缩后的布隆过滤器长度*/

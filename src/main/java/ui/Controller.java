@@ -7,6 +7,7 @@ import base.*;
 import domain.ResultInfo;
 import org.apache.logging.log4j.Logger;
 import utils.Environment;
+import utils.Reader_M;
 import utils.Recorder;
 //import org.apache.log4j.Level;
 //import org.apache.log4j.Logger;
@@ -207,15 +208,26 @@ public class Controller implements IObserver{
         IdentifyTool cip = new CIP(logger,recorder,environment);
         cip.execute();
         double CIPtime = cip.recorder.totalExecutionTime*1.0/1000;
+        Recorder cipRecorder = cip.environment.getReaderList().get(0).recorder;
+        System.out.println(cipRecorder.executionTimeList);
         environment.reset();
+        for(Reader_M reader_m : environment.getReaderList()) {
+            reader_m.recorder = new Recorder();
+        }
         IdentifyTool ecip = new ECIP(logger,recorder,environment);
         ecip.execute();
         double ECIPtime = ecip.recorder.totalExecutionTime*1.0/1000;
         environment.reset();
+        for(Reader_M reader_m : environment.getReaderList()) {
+            reader_m.recorder = new Recorder();
+        }
         IdentifyTool ecls = new ECLS(logger,recorder,environment);
         ecls.execute();
         double ECLStime = ecls.recorder.totalExecutionTime*1.0/1000;
         environment.reset();
+        for(Reader_M reader_m : environment.getReaderList()) {
+            reader_m.recorder = new Recorder();
+        }
         IdentifyTool edls = new ECLS(logger,recorder,environment);
         edls.execute();
         double EDLStime = edls.recorder.totalExecutionTime*1.0/1000;
@@ -251,6 +263,7 @@ public class Controller implements IObserver{
         advice += "EDLS：100%\n\n";
 
         advice+="综合考虑时间和准确率，推荐算法："+algorithm+"\n";
+        System.out.println(cipRecorder.executionTimeList);
         System.out.println(advice);
 
         JPython.Graphic(CIPtime, ECIPtime, ECLStime,EDLStime,advice);

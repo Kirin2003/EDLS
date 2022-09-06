@@ -20,7 +20,7 @@ public class ECIP_Main {
         int allTagNumber = 5000;
         int unknownTagNumber = 0;
         int expectedTagNum = allTagNumber - unknownTagNumber;
-        int missingTagNumber = 4900;
+        int missingTagNumber = 0;
         int tagIDLength = 14;
         int categoryIDLength = 32;
         Logger logger = LogManager.getLogger(ECIP_Main.class);

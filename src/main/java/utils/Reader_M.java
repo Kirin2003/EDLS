@@ -37,12 +37,12 @@ public class Reader_M {
      */
     public List<Tag> getReaderMOwnTagList(List<Tag> tagList){
         List<Tag> presentTagList = new ArrayList<>();
+
         double readerX = location.getX();
         double readerY = location.getY();
-
         for(Tag tag:tagList){
-            double tagX = location.getX();
-            double tagY = location.getY();
+            double tagX = tag.getLocation().getX();
+            double tagY = tag.getLocation().getY();
             if(Math.pow(readingRadius,2) > Math.pow(readerX-tagX,2)+Math.pow(readerY-tagY,2)){
                 presentTagList.add(tag);
                 tag.presentTime++;
