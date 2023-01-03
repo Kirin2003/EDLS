@@ -1,4 +1,4 @@
-package protocals;
+package test_pro;
 
 import base.Tag;
 import org.apache.logging.log4j.Logger;
@@ -11,7 +11,7 @@ import java.util.*;
  * @author Kirin Huang
  * @date 2022/8/8 下午10:19
  */
-public class ECLS extends IdentifyTool {
+public class EDLS4 extends IdentifyTool {
     /**
      * 哈希函数的个数, 用于意外标签去除阶段
      */
@@ -19,7 +19,7 @@ public class ECLS extends IdentifyTool {
     /**
      * 假阳性误报率, 即意外标签通过成员检查的比率
      */
-    double falsePositiveRatio = 0.01;
+    double falsePositiveRatio = 0.001;
 
 
     /**
@@ -28,7 +28,7 @@ public class ECLS extends IdentifyTool {
      * @param recorder 记录器, 记录算法输出结果
      * @param environment 环境,里面有标签的数目,标签id和类别id列表,位置等信息和阅读器的数目,位置等信息
      */
-    public ECLS(Logger logger, Recorder recorder, Environment environment) {
+    public EDLS4(Logger logger, Recorder recorder, Environment environment) {
         super(logger, recorder, environment);
     }
 
@@ -75,9 +75,7 @@ public class ECLS extends IdentifyTool {
         readers.forEach(reader_m -> eliminated.addAll(reader_m.recorder.eliminateTagList));
         recorder.eliminateTagList.addAll(eliminated);
         recorder.eliminationTagNum=recorder.eliminateTagList.size();
-
-        System.out.println("去除的意外标签数:"+recorder.eliminateTagList.size());
-
+        System.out.println(eliminated.size());
         /**
          * 第二阶段, 识别存在的类别和缺失的类别的阶段
          */
@@ -192,7 +190,7 @@ public class ECLS extends IdentifyTool {
 
         Map<Integer, List<Tag>> collisionTagListMap = new HashMap<>(); // 冲突时隙的时隙-标签列表映射
         int collisionTagListIndex = 0;
-        int repeat = 0;
+
         while (recognizedCidNum < expectedCidNum) { // 当识别数目小于期望标签数目时一直循环
             ++recorder1.roundCount;
 
@@ -209,8 +207,13 @@ public class ECLS extends IdentifyTool {
              * 1 优化时隙
              */
             logger.error("缺失率 : " + missRate);
-            frameSize = CLS_OptimizeFrame(missRate,expectedCidNum,recognizedCidNum);
-            useCLS = true;
+            if (missRate > 0.679){ // 缺失率>0.679, 使用cls
+                frameSize = CLS_OptimizeFrame(missRate,expectedCidNum,recognizedCidNum);
+                useCLS = true;
+            }else{ // 缺失率<=0.679, 使用SFMTI
+                frameSize = SFMTI_OptimizeFrame(expectedCidNum,recognizedCidNum);
+                useCLS = false;
+            }
 
             /**
              * 2 阅读器为标签分配时隙, 生成filter vector, expMap
@@ -463,12 +466,6 @@ public class ECLS extends IdentifyTool {
                 if(missRate >= 1) missRate = 0.99;
                 if(missRate <= 0) missRate = 0.01;
             }
-            if (recognizedCidNumCurrentRound == 0) {
-                repeat ++;
-            }
-            if (repeat >= 5) {
-                break;
-            }
 
             // 清零
             recognizedActualCidNumCurrentRound = 0;
@@ -486,6 +483,7 @@ public class ECLS extends IdentifyTool {
         // 准确率,1-假阳性概率
         recorder1.correctRate = 1-(expectedCidNum - expectedActualCidNum-recorder1.recognizedMissingCidNum)*1.0/(expectedCidNum);
         System.out.println(" " );
+        System.out.println(recorder1.correctRate+" "+expectedCidNum+" "+expectedActualCidNum+" "+recorder1.recognizedMissingCidNum);
     }
 
     private int SFMTI_OptimizeFrame(int expectedCidNum, int recognizedCidNum) {
@@ -496,9 +494,9 @@ public class ECLS extends IdentifyTool {
     private int CLS_OptimizeFrame(double missRate, int expectedTagNum, int recognizedTagNum) {
         // TODO 如果超过rho-opt-TSA.txt的情况.(因为有意外标签,缺失率可能大于1,会出现ArrayIndexOutOfBoundsException的情况)
         try{
-            double rho = RHOUtils.getBestRho(missRate,"rho-opt-TSA.txt");
-            int f = (int)Math.ceil(((double)(expectedTagNum - recognizedTagNum)) / rho);
-            return Math.max(f,15);
+        double rho = RHOUtils.getBestRho(missRate,"rho-opt-TSA.txt");
+        int f = (int)Math.ceil(((double)(expectedTagNum - recognizedTagNum)) / rho);
+        return Math.max(f,15);
         }catch (ArrayIndexOutOfBoundsException e) {
             return 15;
         }
@@ -813,7 +811,7 @@ public class ECLS extends IdentifyTool {
 
 
             }else if (element == 1) {
-//                logger.debug("时隙 = " + k + " 类别 = "+resultMap.get(k).get(0).getCategoryID()); // TODO?bug!
+//                logger.debug("时隙 = " + k + " 类别 = "+resultMap.get(k).get(0).getCategoryID());
             }else if(element == 0){
                 logger.debug("时隙 = " + k);
             }

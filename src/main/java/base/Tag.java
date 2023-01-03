@@ -11,7 +11,7 @@ public class Tag {
     public String tagID = null;
     public String categoryID = null;
     protected boolean active = true;
-    protected int slotSelected;
+    protected int slotSelected = -1;
 
     public int presentTime = 0;
     public List<Integer> readerIdList = new ArrayList<>();
@@ -245,4 +245,22 @@ public class Tag {
     public List<String> getPseudoRandomList() {
         return pseudoRandomList;
     }
+
+    public int getPseudoRanListLen() {
+        return pseudoRanListLen;
+    }
+
+    public void setPseudoRanListLen(int pseudoRanListLen) {
+        this.pseudoRanListLen = pseudoRanListLen;
+    }
+
+    public int getPseudoRanStrLen() {
+        return pseudoRanStrLen;
+    }
+
+    public void setPseudoRanStrLen(int pseudoRanStrLen) {
+        this.pseudoRanStrLen = pseudoRanStrLen;
+    }
+
+
 }

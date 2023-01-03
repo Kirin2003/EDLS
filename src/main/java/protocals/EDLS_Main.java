@@ -17,11 +17,11 @@ import java.util.List;
 public class EDLS_Main {
     public static void main(String[] args) {
         int instanceNumber = 1;
-        int allTagNumber = 5000;
-        int unknownTagNumber = 50;
+        int allTagNumber = 1000;
+        int unknownTagNumber = 0;
         int expectedTagNum = allTagNumber - unknownTagNumber;
-        int missingTagNumber = 100;
-        int tagIDLength = 14;
+        int missingTagNumber = (int)(expectedTagNum * 0.2);
+        int tagIDLength = 96;
         int categoryIDLength = 32;
         Logger logger = LogManager.getLogger(EDLS_Main.class);
 
@@ -44,7 +44,7 @@ public class EDLS_Main {
             Environment environment = new Environment(allTagList, expectedTagList, tagList,expectedTagNum/10);
 
             // single reader
-            environment.createType1(4000, 1600, 1, 1);
+            environment.createType1(4000, 1600, 5, 2);
 
             EDLS edls = new EDLS(logger,recorder,environment);
             edls.execute();

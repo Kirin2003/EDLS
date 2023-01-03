@@ -1,8 +1,8 @@
 package protocals;
 
+import LoF_Count.LoF;
 import base.Tag;
 import org.apache.logging.log4j.Logger;
-import protocals.IdentifyTool;
 import utils.*;
 
 import java.util.*;
@@ -11,7 +11,7 @@ import java.util.*;
  * @author Kirin Huang
  * @date 2022/8/8 下午10:19
  */
-public class ECLS extends IdentifyTool {
+public class EDLS_reliable extends IdentifyTool {
     /**
      * 哈希函数的个数, 用于意外标签去除阶段
      */
@@ -28,7 +28,7 @@ public class ECLS extends IdentifyTool {
      * @param recorder 记录器, 记录算法输出结果
      * @param environment 环境,里面有标签的数目,标签id和类别id列表,位置等信息和阅读器的数目,位置等信息
      */
-    public ECLS(Logger logger, Recorder recorder, Environment environment) {
+    public EDLS_reliable(Logger logger, Recorder recorder, Environment environment) {
         super(logger, recorder, environment);
     }
 
@@ -81,8 +81,16 @@ public class ECLS extends IdentifyTool {
         /**
          * 第二阶段, 识别存在的类别和缺失的类别的阶段
          */
-        identify();
-
+//        List<Tag> actuallist = environment.getActualTagList();
+//
+//        InitPseudoByCate.initPseudoRandomListByCate(actuallist, 100, 15);
+//
+////        LoF.estimate(environment.getActualTagList());
+//        //int res1 = MultiHashLoF.estimate(environment.getActualTagList());
+//        int res2 = MultisplittingLoF.estimate(actuallist,0.0);
+//        System.out.println("multi hash:"+res1);
+        identify_loop(0.005,0.1);
+//
         // 第二阶段所有阅读器的执行时间中最长的作为第二阶段的时间
         double maxTime2 = 0;
         for(Reader_M reader_m : readers) {
@@ -121,6 +129,55 @@ public class ECLS extends IdentifyTool {
      */
     public void unexpectedTagElimination() {
         UnexpectedTagEliminationMethod.BloomFilterMethod(numberOfHashFunctions, falsePositiveRatio,environment,logger);
+
+    }
+
+    public void identify_loop(double threshold, double reuseRate) {
+        Set<String> presentCidSet = new HashSet<>();
+        Set<String> reuseCidSet = new HashSet<>();
+        int sessionId = 1;
+        double pm = 1;
+
+        while(pm > threshold) {
+            identify();
+            Set<String> curPresentCidSet = recorder.actualCids;
+            Set<String> newPresentCidSet = new HashSet<>(curPresentCidSet);
+            newPresentCidSet.removeAll(presentCidSet);
+            if(!presentCidSet.isEmpty()){
+                Set<String> nonReuseCidSet = new HashSet<>(presentCidSet);
+                nonReuseCidSet.removeAll(reuseCidSet);
+                int k1 = nonReuseCidSet.size();
+                int k2 = newPresentCidSet.size();
+                Set<String> reuseCur = new HashSet<>(reuseCidSet);
+                reuseCur.removeAll(curPresentCidSet);
+                Set<String> reuseNotInCur = new HashSet<>(reuseCidSet);
+                reuseNotInCur.removeAll(curPresentCidSet);
+                int l = reuseCur.size();
+                int m = reuseNotInCur.size();
+                double phat = l * 1.0 / (l+m);
+                double nhat = (k1 + k2 + l + m)*1.0/(1-Math.pow(phat,sessionId));
+                pm = 1-Math.pow(1-Math.pow(phat,sessionId),nhat);
+            }
+            presentCidSet.addAll(curPresentCidSet);
+            int reuseNum = (int)(presentCidSet.size()*reuseRate);
+            Set<String> reuseCandidate = new HashSet<>(reuseCidSet);
+            reuseCandidate.addAll(newPresentCidSet);
+            // 随机选择reusenum个类别
+            Set<String> newReuseCidSet = new HashSet<>();
+            List<String> newReuseCidList = new ArrayList<>(reuseCandidate);
+            for(int i = 0; newReuseCidSet.size() < reuseNum; ++i){
+                newReuseCidSet.add(newReuseCidList.get(i));
+            }
+            for(Tag tag : environment.getExpectedTagList()) {
+                tag.setActive(newReuseCidSet.contains(tag.getCategoryID()));
+            }
+            reuseCidSet = newReuseCidSet;
+            ++sessionId;
+        }
+        // thePresentCidSet is what we want: the final present cid set
+        recorder.actualCids.clear();
+        recorder.actualCids.addAll(presentCidSet);
+
 
     }
 
@@ -183,7 +240,9 @@ public class ECLS extends IdentifyTool {
 
         Set<String> expectedCidSet = new HashSet<>();
         expectedTagList.forEach(tag -> expectedCidSet.add(tag.getCategoryID()));
-        int expectedCidNum = expectedCidSet.size();
+//        int expectedCidNum = expectedCidSet.size();
+        int expectedCidNum = LoF.estimate(environment.getActualTagList());
+
         logger.info("该阅读器需要识别的类别数=[ "+expectedCidNum+" ] 该阅读器识别范围内真实存在的类别数=[ "+expectedActualCidNum+" ]");
         double missRate = (expectedCidNum - expectedActualCidNum) * 1.0 / expectedCidNum;
 
@@ -209,8 +268,13 @@ public class ECLS extends IdentifyTool {
              * 1 优化时隙
              */
             logger.error("缺失率 : " + missRate);
-            frameSize = CLS_OptimizeFrame(missRate,expectedCidNum,recognizedCidNum);
-            useCLS = true;
+            if (missRate > 0.679){ // 缺失率>0.679, 使用cls
+                frameSize = CLS_OptimizeFrame(missRate,expectedCidNum,recognizedCidNum);
+                useCLS = true;
+            }else{ // 缺失率<=0.679, 使用SFMTI
+                frameSize = SFMTI_OptimizeFrame(expectedCidNum,recognizedCidNum);
+                useCLS = false;
+            }
 
             /**
              * 2 阅读器为标签分配时隙, 生成filter vector, expMap
@@ -487,8 +551,8 @@ public class ECLS extends IdentifyTool {
         recorder1.correctRate = 1-(expectedCidNum - expectedActualCidNum-recorder1.recognizedMissingCidNum)*1.0/(expectedCidNum);
         System.out.println(" " );
     }
-
-    private int SFMTI_OptimizeFrame(int expectedCidNum, int recognizedCidNum) {
+ 
+     private int SFMTI_OptimizeFrame(int expectedCidNum, int recognizedCidNum) {
         int f = (int)Math.ceil(((double)(expectedCidNum - recognizedCidNum)) / 1.68);
         return Math.max(f, 15);
     }

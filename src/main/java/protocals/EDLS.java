@@ -1,7 +1,12 @@
 package protocals;
 
+import LoF_Count.InitPseudoByCate;
+import LoF_Count.LoF;
+import LoF_Count.MultiHashLoF;
+import LoF_Count.MultisplittingLoF;
 import base.Tag;
 import org.apache.logging.log4j.Logger;
+import protocals.IdentifyTool;
 import utils.*;
 
 import java.util.*;
@@ -29,16 +34,6 @@ public class EDLS extends IdentifyTool {
      */
     public EDLS(Logger logger, Recorder recorder, Environment environment) {
         super(logger, recorder, environment);
-
-        int expectedActualCidNum = 0;
-        Set<String> expectedActualCidSet = new HashSet<>();
-        environment.getActualTagList().forEach(tag -> expectedActualCidSet.add(tag.getCategoryID()));
-        expectedActualCidNum = expectedActualCidSet.size();
-
-        Set<String> expectedCidSet = new HashSet<>();
-        environment.getExpectedTagList().forEach(tag -> expectedCidSet.add(tag.getCategoryID()));
-        int expectedCidNum = expectedCidSet.size();
-        logger.debug("环境中的期望类别数=[ "+expectedCidNum+" ] 环境中真实存在的类别数=[ "+expectedActualCidNum+" ]");
     }
 
     /**
@@ -49,6 +44,16 @@ public class EDLS extends IdentifyTool {
      */
     @Override
     public void execute(){
+        int expectedActualCidNum = 0;
+        Set<String> expectedActualCidSet = new HashSet<>();
+        environment.getActualTagList().forEach(tag -> expectedActualCidSet.add(tag.getCategoryID()));
+        expectedActualCidNum = expectedActualCidSet.size();
+
+        Set<String> expectedCidSet = new HashSet<>();
+        environment.getExpectedTagList().forEach(tag -> expectedCidSet.add(tag.getCategoryID()));
+        int expectedCidNum = expectedCidSet.size();
+        logger.debug("环境中的期望类别数=[ "+expectedCidNum+" ] 环境中真实存在的类别数=[ "+expectedActualCidNum+" ]");
+
         List<Reader_M> readers = environment.getReaderList();
 
         /**
@@ -73,40 +78,54 @@ public class EDLS extends IdentifyTool {
         Set<Tag> eliminated = new HashSet<>();
         readers.forEach(reader_m -> eliminated.addAll(reader_m.recorder.eliminateTagList));
         recorder.eliminateTagList.addAll(eliminated);
+        recorder.eliminationTagNum=recorder.eliminateTagList.size();
+
+        System.out.println("去除的意外标签数:"+recorder.eliminateTagList.size());
 
         /**
          * 第二阶段, 识别存在的类别和缺失的类别的阶段
          */
-        identify();
+        List<Tag> actuallist = environment.getActualTagList();
 
-        // 第二阶段所有阅读器的执行时间中最长的作为第二阶段的时间
-        double maxTime2 = 0;
-        for(Reader_M reader_m : readers) {
-            double t1 = reader_m.recorder.totalExecutionTime;
-            if(t1 > maxTime2) {
-                maxTime2 = t1;
-            }
-        }
-        recorder.totalExecutionTime = maxTime2;
-        logger.error("第二阶段结束, 所有阅读器的总时间:[ "+maxTime2+" ]ms");
+        InitPseudoByCate.initPseudoRandomListByCate(actuallist, 100, 15);
 
-        readers.forEach(reader_m -> recorder.actualCids.addAll(reader_m.recorder.actualCids));
-
-        environment.getExpectedTagList().forEach(tag -> {
-            String cid = tag.getCategoryID();
-            if(!recorder.actualCids.contains(cid)){
-                recorder.missingCids.add(cid);
-            }
-        });
-
-        System.out.println(" ");
-        Recorder recorder1 = environment.getReaderList().get(0).recorder;
-        System.out.println("总时间:"+recorder.totalExecutionTime);
-        System.out.println("缺失率列表:"+recorder1.missingRateList);
-        System.out.println("执行时间列表:"+recorder1.executionTimeList);
-        System.out.println("识别类别列表:"+recorder1.recognizedCidNumList);
-        System.out.println("识别存在类别列表:"+recorder1.recognizedActualCidNumList);
-        System.out.println("识别缺失类别列表:"+recorder1.recognizedMissingCidNumList);
+        LoF.estimate(environment.getActualTagList());
+        int res1 = MultiHashLoF.estimate(environment.getActualTagList());
+        int res2 = MultisplittingLoF.estimate(actuallist,0.0);
+        System.out.println("multi hash:"+res2);
+//        identify();
+////
+//        // 第二阶段所有阅读器的执行时间中最长的作为第二阶段的时间
+//        double maxTime2 = 0;
+//        for(Reader_M reader_m : readers) {
+//            double t1 = reader_m.recorder.totalExecutionTime;
+//            if(t1 > maxTime2) {
+//                maxTime2 = t1;
+//            }
+//        }
+//        recorder.totalExecutionTime = maxTime2;
+//        logger.error("第二阶段结束, 所有阅读器的总时间:[ "+maxTime2+" ]ms");
+//
+//        readers.forEach(reader_m -> recorder.actualCids.addAll(reader_m.recorder.actualCids));
+//
+//        environment.getExpectedTagList().forEach(tag -> {
+//            String cid = tag.getCategoryID();
+//            if(!recorder.actualCids.contains(cid)){
+//                recorder.missingCids.add(cid);
+//            }
+//        });
+//        recorder.correctRate = 1-(expectedCidNum-expectedActualCidNum-recorder.missingCids.size())*1.0/(expectedCidNum);
+//
+//        System.out.println(" ");
+//        Recorder recorder1 = environment.getReaderList().get(0).recorder;
+//        System.out.println("总时间:"+recorder.totalExecutionTime);
+//        System.out.println("缺失率列表:"+recorder1.missingRateList);
+//        System.out.println("执行时间列表:"+recorder1.executionTimeList);
+//        System.out.println("识别类别列表:"+recorder1.recognizedCidNumList);
+//        System.out.println("识别存在类别列表:"+recorder1.recognizedActualCidNumList);
+//        System.out.println("识别缺失类别列表:"+recorder1.recognizedMissingCidNumList);
+//        System.out.println("误判标签数:"+(expectedCidNum-expectedActualCidNum-recorder.missingCids.size())+"准确率:"+recorder.correctRate);
+//        System.out.println("去除的意外标签数:"+recorder.eliminateTagList.size());
     }
 
     /**
@@ -124,7 +143,7 @@ public class EDLS extends IdentifyTool {
         for (Reader_M reader : environment.getReaderList()) {
             logger.error("<<<<<<<<<<<<<<<<<<<< 阅读器: " + reader.getID() + " >>>>>>>>>>>>>>>>>>>");
             // 每一次需要reset(),将环境中所有预期标签设为活跃, 因为有些标签在其他阅读器中识别为缺失, 但在某个阅读器中识别为存在, 这个标签是存在的
-            environment.reset();
+            environment.getExpectedTagList().forEach(tag -> tag.setActive(true));
             identify( reader);
         }
     }
@@ -144,8 +163,6 @@ public class EDLS extends IdentifyTool {
         environment.getAllTagList().removeAll(environment.getExpectedTagList());
         List<Tag> coveredUnexpectedTagList = reader_m.getReaderMOwnTagList(environment.getAllTagList());
         environment.getAllTagList().addAll(environment.getExpectedTagList());
-        // 意外标签也会加入验证阶段,干扰实验结果,但不再期望标签中,因此在期望中不会给他分配时隙
-        coveredActualTagList.addAll(coveredUnexpectedTagList);
 
         boolean useCLS;
         int recognizedCidNum = 0;
@@ -178,17 +195,21 @@ public class EDLS extends IdentifyTool {
 
         Set<String> expectedCidSet = new HashSet<>();
         expectedTagList.forEach(tag -> expectedCidSet.add(tag.getCategoryID()));
-        int expectedCidNum = expectedCidSet.size();
+//        int expectedCidNum = expectedCidSet.size();
+        int expectedCidNum = LoF.estimate(environment.getActualTagList());
+
         logger.info("该阅读器需要识别的类别数=[ "+expectedCidNum+" ] 该阅读器识别范围内真实存在的类别数=[ "+expectedActualCidNum+" ]");
         double missRate = (expectedCidNum - expectedActualCidNum) * 1.0 / expectedCidNum;
 
+        // 意外标签也会加入验证阶段,干扰实验结果,但不再期望标签中,因此在期望中不会给他分配时隙
+        coveredActualTagList.addAll(coveredUnexpectedTagList);
 
         Map<Integer, List<Tag>> collisionTagListMap = new HashMap<>(); // 冲突时隙的时隙-标签列表映射
         int collisionTagListIndex = 0;
-
+        int repeat = 0;
         while (recognizedCidNum < expectedCidNum) { // 当识别数目小于期望标签数目时一直循环
             ++recorder1.roundCount;
-            recorder1.missingRateList.add( missRate);
+
             logger.info("################### 第 "+recorder1.roundCount+" 轮 #######################");
 
             // CLS需要一个随机数, SFMTI需要两个随机数
@@ -330,114 +351,113 @@ public class EDLS extends IdentifyTool {
             int slotLength = filterVector.size();
             int roundSlotCount = 0;
 
-            for (int i = 0; i < slotLength; i++){
-                if(filterVector.get(i) != 0) { // 期望中有标签回应
-                    roundSlotCount++;
-                    slotSumNum++;
-
-
-                    recorder1.slotCount ++;
-                    // 分析实际得到的回应情况
-                    if (!actualSlotToCidSet.containsKey(i)) { // 有0个类别回应
-                        realReply[0]++;
-                        if(filterVector.get(i) == 2){ // Unreconcilable 2 Collisions
-                            twoTurnToZero++;
-                        }else if (filterVector.get(i) == 3){ // Unreconcilable 3 Collisions
-                            threeTurnToZero++;
-                        }
-                        // 预期有标签回应(filterVector.get(i) > 0), 实际没有标签回应(slotResponseList.size() == 0), 全部缺失!
-                        Set<String> str = expSlotToCidSet.get(i);
-                        expectedTagList.forEach(tag -> {
-                            if (str.contains(tag.getCategoryID())){
-                                tag.setActive(false);
+            if(useCLS) {
+                for (int i = 0; i < slotLength; i++) {
+                    if (filterVector.get(i) == 0) continue;
+                    if (filterVector.get(i) == 1) {
+                        if (!actualSlotToCidSet.containsKey(i)) {
+                            // 全部缺失
+                            realReply[0]++;
+                            // 预期有标签回应(filterVector.get(i) > 0), 实际没有标签回应(slotResponseList.size() == 0), 全部缺失!
+                            Set<String> str = expSlotToCidSet.get(i);
+                            if (str.size() != 1) {
+                                System.out.println("错误!");
                             }
-                        });
-                        recognizedCidNum += str.size();
-
-                        recognizedCidNumCurrentRound += str.size();
-                        recognizedMissCidNumCurrentRound+=str.size();
-                        recorder1.missingCids.addAll(str);
-                        logger.info("时隙=" + (i) + " 结果=空时隙, 缺失类别列表="+str.toString());
-                        recorder1.emptySlotCount ++;
-
-                    } else if (actualSlotToCidSet.get(i).size() == 1) { // 同1个类别的标签回应
-                        realReply[1]++;
-                        if (useCLS){
-                            if(filterVector.get(i) == 1){ // use CLS, 预期是1, 结果是1
-                                recorder1.singletonSlotCount ++;
-                                logger.info("时隙=" + (i) + " 结果=单时隙" + actualSlotToCidSet.get(i).toString());
-                                String cid1 = expMap.get(i).get(0).getCategoryID();
-                                expectedTagList.forEach(tag -> {
-                                    if(tag.getCategoryID() .equals( cid1)) {
-                                        tag.setActive(false);
-                                    }
-                                });
-                                recognizedCidNumCurrentRound++;
-                                recognizedCidNum ++;
-                                recognizedActualCidNumCurrentRound ++;
-                                recorder1.actualCids.add(expMap.get(i).get(0).getCategoryID());
-
-                            }else{ // use CLS, 预期是1, 结果大于1, 无法识别
-
-                                if(filterVector.get(i) == 2){ // 2 changed to 1
-                                    twoTurnToOne++;
-                                }else if (filterVector.get(i) == 3){ // 3 changed to 1
-                                    threeTurnToOne++;
-                                }
-                                List<Tag> tmplist = expMap.get(i);
-                                Set<String> str = new HashSet<>();
-                                Set<String> cidset = actualSlotToCidSet.get(i);
-                                tmplist.forEach(tag -> {
-                                    if(!cidset.contains(tag.getCategoryID())) {
-                                        str.add(tag.getCategoryID());
-                                    }
-                                });
-                                recorder1.noResult ++;
-                                logger.info("时隙=" + (i) + " 结果=无法识别 " + actualSlotToCidSet.get(i).toString()+":其他="+str);
-                                collisionTagListMap.put(collisionTagListIndex++, tmplist);
-
-                            }
-                        }else{ // use SFMTI, 只有一个标签回应必然是单时隙, 不可能是有缺失的冲突时隙, 因为SFMTI已经解决冲突了
-//
-                            String cid1 = expMap.get(i).get(0).getCategoryID();
                             expectedTagList.forEach(tag -> {
-                                if(tag.getCategoryID() .equals( cid1)) {
+                                if (str.contains(tag.getCategoryID())) {
                                     tag.setActive(false);
                                 }
                             });
+                            recognizedCidNum += str.size();
 
+                            recognizedCidNumCurrentRound += str.size();
+                            recognizedMissCidNumCurrentRound += str.size();
+                            recorder1.missingCids.addAll(str);
+                            logger.info("时隙=" + (i) + " 结果=空时隙, 缺失类别列表=" + str.toString());
+                            recorder1.emptySlotCount++;
+                        } else {
+                            // 认为该类别存在(有可能为意外标签的干扰,即假阳性错误)
+                            String cid1 = expMap.get(i).get(0).getCategoryID();
+                            expectedTagList.forEach(tag -> {
+                                if (tag.getCategoryID().equals(cid1)) {
+                                    tag.setActive(false);
+                                }
+                            });
+                            recognizedActualCidNumCurrentRound++;
                             recognizedCidNumCurrentRound++;
-                            recognizedCidNum ++;
-                            logger.info("时隙="+(i) + " 结果=单时隙 "+actualSlotToCidSet.get(i).toString());
-                            recorder1.singletonSlotCount ++;
-                            recorder1.actualCids.add(expMap.get(i).get(0).getCategoryID());
-                            recognizedActualCidNumCurrentRound ++;
+                            recognizedCidNum++;
+                            logger.info("时隙=" + (i) + " 结果=单时隙 " + cid1);
+                            recorder1.singletonSlotCount++;
+                            recorder1.actualCids.add(cid1);
+
                         }
-                    } else { // 有多个标签回应
-                        realReply[2]++;
-                        if(filterVector.get(i) == 2 && actualSlotToCidSet.get(i).size() == 2){
-                            twoTurnToTwo++; // 2->2
-                        }else if(filterVector.get(i) == 3 && actualSlotToCidSet.get(i).size() == 2){
-                            threeTurnToTwo++;  // 3->2
-                        }else if(filterVector.get(i) == 3 && actualSlotToCidSet.get(i).size() == 3){
-                            threeTurnToThree++;  // 3->3
+                    } else {
+                        if (!actualSlotToCidSet.containsKey(i)) {
+                            // 冲突时隙但无标签回应,全部缺失
+                            realReply[0]++;
+                            if (filterVector.get(i) == 2) { // Unreconcilable 2 Collisions
+                                twoTurnToZero++;
+                            } else if (filterVector.get(i) == 3) { // Unreconcilable 3 Collisions
+                                threeTurnToZero++;
+                            }
+                            // 预期有标签回应(filterVector.get(i) > 0), 实际没有标签回应(slotResponseList.size() == 0), 全部缺失!
+                            Set<String> str = expSlotToCidSet.get(i);
+                            expectedTagList.forEach(tag -> {
+                                if (str.contains(tag.getCategoryID())) {
+                                    tag.setActive(false);
+                                }
+                            });
+                            recognizedCidNum += str.size();
+
+                            recognizedCidNumCurrentRound += str.size();
+                            recognizedMissCidNumCurrentRound += str.size();
+                            recorder1.missingCids.addAll(str);
+                            logger.info("时隙=" + (i) + " 结果=空时隙, 缺失类别列表=" + str.toString());
+                            recorder1.emptySlotCount++;
                         }
+                    }
+                }
+            } else {
+                for (int i = 0; i < slotLength; i++) {
+                    if(filterVector.get(i) == 0) continue;
+                    // 下面全是预期有标签回应的情况
+                    if(!actualSlotToCidSet.containsKey(i)) {
+                        // 缺失!
+                        String cid1 = expMap.get(i).get(0).getCategoryID();
+                        expectedTagList.forEach(tag -> {
+                            if (tag.getCategoryID().equals(cid1)) {
+                                tag.setActive(false);
+                            }
+                        });
+                        recognizedMissCidNumCurrentRound++;
+                        recognizedCidNumCurrentRound++;
+                        recognizedCidNum++;
+                        logger.info("时隙=" + (i) + " 结果=单时隙 " + cid1);
+                        recorder1.emptySlotCount++;
+                        recorder1.missingCids.add(cid1);
 
-
-                        logger.info("时隙=" + (i) + " 结果=冲突时隙 选择这一时隙的类别列表=" + actualSlotToCidSet.get(i).toString());
-                        recorder1.collisionSlotCount++;
-
-                        // 期望标签的映射, 即便有缺失的, 不知道是哪个缺失, 这里把期望标签全部记录到了冲突时隙-标签列表中
-                        List<Tag> tmplist = expMap.get(i);
-                        collisionTagListMap.put(collisionTagListIndex++, tmplist); // 冲突时隙-标签列表
+                    } else {
+                        // 存在
+                        // 认为该类别存在(有可能为意外标签的干扰,即假阳性错误)
+                        String cid1 = expMap.get(i).get(0).getCategoryID();
+                        expectedTagList.forEach(tag -> {
+                            if (tag.getCategoryID().equals(cid1)) {
+                                tag.setActive(false);
+                            }
+                        });
+                        recognizedActualCidNumCurrentRound++;
+                        recognizedCidNumCurrentRound++;
+                        recognizedCidNum++;
+                        logger.info("时隙=" + (i) + " 结果=单时隙 " + cid1);
+                        recorder1.singletonSlotCount++;
+                        recorder1.actualCids.add(cid1);
 
                     }
-
-                }else{ // 期望中没有标签回应
-                    // 空时隙
-                    logger.info("空时隙"+i);
                 }
             }
+
+
+
             recorder1.roundSlotCountList.add(roundSlotCount);
 
             logger.debug("缺失率: "+missRate);
@@ -454,8 +474,19 @@ public class EDLS extends IdentifyTool {
             recorder1.recognizedMissingCidNum = recorder1.missingCids.size();
             recorder1.recognizedCidNum = recorder1.actualCids.size() + recorder1.missingCids.size();
 
+
             if(expectedCidNum > recognizedCidNum) {
-                missRate = (expectedCidNum - expectedActualCidNum - recorder1.recognizedMissingCidNum)*1.0 / (expectedCidNum - recognizedCidNum);
+                recorder1.missingRateList.add( missRate);
+                missRate = (expectedCidNum - expectedActualCidNum - recorder1.missingCids.size())*1.0 / (expectedCidNum - recorder1.missingCids.size()-recorder1.actualCids.size());
+                // 由于意外标签的影响,缺失率可能出现异常值
+                if(missRate >= 1) missRate = 0.99;
+                if(missRate <= 0) missRate = 0.01;
+            }
+            if (recognizedCidNumCurrentRound == 0) {
+                repeat ++;
+            }
+            if (repeat >= 5) {
+                break;
             }
 
             // 清零
@@ -471,17 +502,25 @@ public class EDLS extends IdentifyTool {
         recorder1.recognizedActualCidNum = recorder1.actualCids.size();
         recorder1.recognizedMissingCidNum = recorder1.missingCids.size();
         recorder1.recognizedCidNum = recorder1.actualCids.size() + recorder1.missingCids.size();
+        // 准确率,1-假阳性概率
+        recorder1.correctRate = 1-(expectedCidNum - expectedActualCidNum-recorder1.recognizedMissingCidNum)*1.0/(expectedCidNum);
+        System.out.println(" " );
     }
-
-    private int SFMTI_OptimizeFrame(int expectedCidNum, int recognizedCidNum) {
+ 
+     private int SFMTI_OptimizeFrame(int expectedCidNum, int recognizedCidNum) {
         int f = (int)Math.ceil(((double)(expectedCidNum - recognizedCidNum)) / 1.68);
         return Math.max(f, 15);
     }
 
     private int CLS_OptimizeFrame(double missRate, int expectedTagNum, int recognizedTagNum) {
-        double rho = RHOUtils.getBestRho(missRate,"rho-opt-TSA.txt");
-        int f = (int)Math.ceil(((double)(expectedTagNum - recognizedTagNum)) / rho);
-        return Math.max(f,15);
+        // TODO 如果超过rho-opt-TSA.txt的情况.(因为有意外标签,缺失率可能大于1,会出现ArrayIndexOutOfBoundsException的情况)
+        try{
+            double rho = RHOUtils.getBestRho(missRate,"rho-opt-TSA.txt");
+            int f = (int)Math.ceil(((double)(expectedTagNum - recognizedTagNum)) / rho);
+            return Math.max(f,15);
+        }catch (ArrayIndexOutOfBoundsException e) {
+            return 15;
+        }
     }
 
     private void SFMTI_SelectSlot(Tag tag, int random1, int random2, int frameSize, List<Integer> filterVector, int X, Map<Integer, List<Tag>> expMap, Map<Integer, List<String>> verMap) {
@@ -655,7 +694,7 @@ public class EDLS extends IdentifyTool {
                 logger.debug("时隙 = " + k + " 类别 = " + tagStr.toString());
             } else if (element == 1) {
 
-                logger.debug("时隙 = " + k + " 类别 = " + resultMap.get(k).get(0).getCategoryID());
+//                logger.debug("时隙 = " + k + " 类别 = " + resultMap.get(k).get(0).getCategoryID());
             } else if (element == 0) {
                 logger.debug("时隙 = " + k+" 空时隙");
             }
@@ -793,7 +832,7 @@ public class EDLS extends IdentifyTool {
 
 
             }else if (element == 1) {
-                logger.debug("时隙 = " + k + " 类别 = "+resultMap.get(k).get(0).getCategoryID());
+//                logger.debug("时隙 = " + k + " 类别 = "+resultMap.get(k).get(0).getCategoryID()); // TODO?bug!
             }else if(element == 0){
                 logger.debug("时隙 = " + k);
             }

@@ -1,5 +1,6 @@
 package utils;
 
+import BloomFilter.BloomFilter;
 import base.Tag;
 
 import java.util.*;
@@ -11,32 +12,8 @@ import org.apache.logging.log4j.Logger;
  * @date 2022/8/10 下午10:21
  */
 public class UnexpectedTagEliminationMethod {
+
     public static void BloomFilterMethod(int numberOfHashFunctions, double falsePositiveRatio, Environment environment, Logger logger) {
-        //第一阶段, 所有阅读器同时工作, 去除意外标签, 等待所有阅读器工作完毕再进行下一阶段, 这样意外标签去除的多, 对下一阶段干扰的就少
-        BloomFilter bf = new BloomFilter(logger);
-        List<Tag> expectedTagList = environment.getExpectedTagList();
-        Set<String> cids = new HashSet<>();
-        for(Tag tag : expectedTagList) {
-            cids.add(tag.categoryID);
-        }
-        List<String> cidList = new ArrayList<>(cids);
-        int bloomFilterSize = (int) Math.ceil((-cids.size() * numberOfHashFunctions) / Math.log(1 - Math.pow(falsePositiveRatio, 1.0 / numberOfHashFunctions)));
-        Random random = new Random(System.currentTimeMillis());
-        List<Integer> randomInts = new ArrayList<>();
-        for(int i = 0; i < numberOfHashFunctions; i++) {
-            randomInts.add(random.nextInt(100));
-        }
-        List<Integer> bloomFilterVector = bf.genFilterVector(numberOfHashFunctions,bloomFilterSize,randomInts,environment.getExpectedTagList());
-        for (Reader_M reader : environment.getReaderList()){
-            logger.error("<<<<<<<<<<<<<<<<<<<< 阅读器: " + reader.getID() + " >>>>>>>>>>>>>>>>>>>");
-            bf.membershipCheck(reader.recorder,bloomFilterVector,reader.coveredAllTagList,numberOfHashFunctions,randomInts,bloomFilterSize);
-            double t1 = bf.membershipCheckExecutionTime(bloomFilterVector);
-            reader.recorder.totalExecutionTime += t1;
-        }
-
-    }
-
-    public static void BloomFilterMethod2(int numberOfHashFunctions, double falsePositiveRatio, Environment environment, Logger logger) {
         //第一阶段, 所有阅读器同时工作, 去除意外标签, 等待所有阅读器工作完毕再进行下一阶段, 这样意外标签去除的多, 对下一阶段干扰的就少
         BloomFilter bf = new BloomFilter(logger);
         List<Tag> expectedTagList = environment.getExpectedTagList();
@@ -47,6 +24,8 @@ public class UnexpectedTagEliminationMethod {
             randomInts.add(random.nextInt(100));
         }
         List<Integer> bloomFilterVector = bf.genFilterVector(numberOfHashFunctions,bloomFilterSize,randomInts,environment.getExpectedTagList());
+        System.out.println(bloomFilterSize);
+        System.out.println(bloomFilterVector.stream().filter(i -> i == 1).count());
         for (Reader_M reader : environment.getReaderList()){
             logger.error("<<<<<<<<<<<<<<<<<<<< 阅读器: " + reader.getID() + " >>>>>>>>>>>>>>>>>>>");
             int num = bf.membershipCheck(reader.recorder,bloomFilterVector,reader.coveredAllTagList,numberOfHashFunctions,randomInts,bloomFilterSize);

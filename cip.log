@@ -1,0 +1,35 @@
+Total number of tags: [1000]
+Total number of expected tags: [1000]
+Actual number of tags: [800]
+<<<<<<<<<<<<<<<<<<<< Instance: 0>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<< 阅读器: 1 >>>>>>>>>>>>>>>>>>>
+消除的意外标签: [0]
+The execution time for 1 round of phase one:248.5
+<<<<<<<<<<<<<<<<<<<< 阅读器: 2 >>>>>>>>>>>>>>>>>>>
+消除的意外标签: [0]
+The execution time for 1 round of phase one:248.5
+<<<<<<<<<<<<<<<<<<<< 阅读器: 3 >>>>>>>>>>>>>>>>>>>
+消除的意外标签: [0]
+The execution time for 1 round of phase one:248.5
+<<<<<<<<<<<<<<<<<<<< 阅读器: 4 >>>>>>>>>>>>>>>>>>>
+消除的意外标签: [0]
+The execution time for 1 round of phase one:248.5
+<<<<<<<<<<<<<<<<<<<< 阅读器: 5 >>>>>>>>>>>>>>>>>>>
+消除的意外标签: [0]
+The execution time for 1 round of phase one:248.5
+<<<<<<<<<<<<<<<<<<<< 阅读器: 6 >>>>>>>>>>>>>>>>>>>
+消除的意外标签: [0]
+The execution time for 1 round of phase one:248.5
+<<<<<<<<<<<<<<<<<<<< 阅读器: 7 >>>>>>>>>>>>>>>>>>>
+消除的意外标签: [0]
+The execution time for 1 round of phase one:248.5
+<<<<<<<<<<<<<<<<<<<< 阅读器: 8 >>>>>>>>>>>>>>>>>>>
+消除的意外标签: [0]
+The execution time for 1 round of phase one:248.5
+<<<<<<<<<<<<<<<<<<<< 阅读器: 9 >>>>>>>>>>>>>>>>>>>
+消除的意外标签: [0]
+The execution time for 1 round of phase one:248.5
+<<<<<<<<<<<<<<<<<<<< 阅读器: 10 >>>>>>>>>>>>>>>>>>>
+消除的意外标签: [0]
+The execution time for 1 round of phase one:248.5
+第一阶段结束, 所有阅读器的总时间:[ 248.5 ]ms

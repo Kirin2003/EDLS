@@ -1,4 +1,4 @@
-package protocals;
+package test_pro;
 
 import base.Tag;
 import org.apache.logging.log4j.Logger;
@@ -52,31 +52,7 @@ public class ECLS extends IdentifyTool {
 
         List<Reader_M> readers = environment.getReaderList();
 
-        /**
-         * 第一阶段, 意外标签去除阶段
-         */
-        unexpectedTagElimination();
 
-        // 第一阶段的时间: 所有阅读器的执行时间中最长的作为第一阶段的时间
-        double maxTime = 0;
-        for(Reader_M reader_m : readers) {
-            double t1 = reader_m.recorder.totalExecutionTime;
-            if(t1 > maxTime) {
-                maxTime = t1;
-            }
-        }
-        recorder.totalExecutionTime = maxTime;
-        logger.error("第一阶段结束, 所有阅读器的总时间:[ "+maxTime+" ]ms");
-        double finalMaxTime = maxTime;
-        readers.forEach(reader_m -> reader_m.recorder.totalExecutionTime = finalMaxTime);
-
-        // 所有阅读器去除(去重)的意外标签的并集是总共去除的意外标签
-        Set<Tag> eliminated = new HashSet<>();
-        readers.forEach(reader_m -> eliminated.addAll(reader_m.recorder.eliminateTagList));
-        recorder.eliminateTagList.addAll(eliminated);
-        recorder.eliminationTagNum=recorder.eliminateTagList.size();
-
-        System.out.println("去除的意外标签数:"+recorder.eliminateTagList.size());
 
         /**
          * 第二阶段, 识别存在的类别和缺失的类别的阶段

@@ -24,6 +24,15 @@ public class TagListGenerator {
         return new TagRepository(allTagList, expectedTagList, actualTagList);
     }
 
+    // TODO 测试,如果不是一个类别的所有标签全部缺失
+    public static TagRepository generateTagRepository2(int tagIDLength, int cidLength, int allTagNum, int density, int unknownTagNum, int missingTagNum){
+        List<Tag> allTagList = TagListGenerator.tagListFactory(tagIDLength, cidLength, allTagNum,density);
+        List<Tag> expectedTagList = TagListGenerator.removeTag(allTagList, unknownTagNum);
+//        List<Tag> actualTagList = TagListGenerator.getActualTags(allTagList, (int)(Math.ceil(missingTagNum*1.0/density)));
+        List<Tag> actualTagList = TagListGenerator.removeTag(allTagList,missingTagNum);
+        return new TagRepository(allTagList, expectedTagList, actualTagList);
+    }
+
     /**
      * Generates an expected tag list with the according to the tag ID length, category id length, tag number, tag number per cid
      * @param tagIDLength Tag ID Length
