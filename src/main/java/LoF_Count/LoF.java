@@ -2,10 +2,7 @@ package LoF_Count;
 
 import base.Tag;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 本类为LoF的实现类，用来估算区域内的标签个数
@@ -14,6 +11,8 @@ import java.util.Map;
  *
  */
 public class LoF {
+	public static int hashStrLength = 100;
+	public static int hashNum = 15;
 
 	/**
 	 * 计算哈希值，哈希值为tag里0、1序列的从右往左的第一个1的位置
@@ -26,7 +25,29 @@ public class LoF {
 		return hashNum.length() - 1 - hashNum.lastIndexOf("1");
 	}
 
+	public static int hash2(String str){
+		return str.length() - 1 - str.lastIndexOf("1");
+	}
 
+	public static Map<String,List<String>> genMap(List<Tag> tagList) {
+		Set<String> cidset = new HashSet<>();
+		for(Tag tag : tagList){
+			cidset.add(tag.getCategoryID());
+		}
+		Map<String,List<String>> cidRandomlistMap = new HashMap<>();
+		for(String cid : cidset){
+			List<String> randomList = new ArrayList<>();
+			for (int i = 0; i < hashNum; i++){
+				StringBuilder sb = new StringBuilder();
+				for (int j = 0; j < hashStrLength; j++)
+					sb.append(((int)(10 * Math.random()))%2);
+				randomList.add(sb.toString());
+
+			}
+			cidRandomlistMap.put(cid,randomList);
+		}
+		return cidRandomlistMap;
+	}
 
 	/**
 	 * 估计标签数量
@@ -74,6 +95,45 @@ public class LoF {
 		System.out.println("--------");
 		
 		return n;
+	}
+
+	/**
+	 * 估计标签列表中包含的类别数量
+	 *
+	 * @return 估计的数量
+	 */
+	public static int estimate2(List<Tag> tagList) {
+		Map<String,List<String>> cidRandomListMap = genMap(tagList);
+		// 获得标签hash长度
+		int hashLength = hashStrLength;
+
+		// 记录slot信息的数组
+		byte[] slotInfo = new byte[hashLength];
+
+		// 生成bit map
+		for(String cid : cidRandomListMap.keySet()) {
+			String random = cidRandomListMap.get(cid).get(10);
+			int i1 = hash2(random);
+			slotInfo[hashLength-1-i1]=1;
+		}
+
+		// 估算
+		int R = 0;//R是slotInfo中最右边0的位置
+		for(int i = slotInfo.length-1; i>0;i--){
+			if(slotInfo[i]==0){
+				R=hashLength-1-i;
+				break;
+			}
+		}
+
+		// n为估计的标签数量
+		int n = (int) (1.2897 * Math.pow(2, R));
+		System.out.println("the estimate tagNum:" + n);
+		System.out.println("--------");
+
+		return n;
+
+
 	}
 
 }

@@ -11,6 +11,8 @@ import java.util.Map.Entry;
  *
  */
 public class MultisplittingLoF {
+	public static int hashStrLength = 100;
+	public static int hashNum = 15;
 	
 	/**
 	 * 键为标签集合，值为第几轮计算标签总量
@@ -32,6 +34,30 @@ public class MultisplittingLoF {
 	public static int hash(Tag tag, int num) {
 		String hashNum = tag.getPseudoRandomList().get(num);
 		return hashNum.length() - 1 - hashNum.lastIndexOf("1");
+	}
+
+	public static int hash2(String str){
+		return str.length() - 1 - str.lastIndexOf("1");
+	}
+
+	public static Map<String,List<String>> genMap(List<Tag> tagList) {
+		Set<String> cidset = new HashSet<>();
+		for(Tag tag : tagList){
+			cidset.add(tag.getCategoryID());
+		}
+		Map<String,List<String>> cidRandomlistMap = new HashMap<>();
+		for(String cid : cidset){
+			List<String> randomList = new ArrayList<>();
+			for (int i = 0; i < hashNum; i++){
+				StringBuilder sb = new StringBuilder();
+				for (int j = 0; j < hashStrLength; j++)
+					sb.append(((int)(10 * Math.random()))%2);
+				randomList.add(sb.toString());
+
+			}
+			cidRandomlistMap.put(cid,randomList);
+		}
+		return cidRandomlistMap;
 	}
 	
 	/**
