@@ -11,7 +11,7 @@ import java.util.*;
  *
  */
 public class MultiHashLoF {
-	public static int hashStrLength = 100;
+	public static int hashStrLength = 20;
 	public static int hashNum = 15;
 
 	/**

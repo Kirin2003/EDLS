@@ -1,6 +1,7 @@
 package protocals;
 
 import LoF_Count.LoF;
+import LoF_Count.MultiHashLoF;
 import LoF_Count.MultisplittingLoF;
 import base.Tag;
 import org.apache.logging.log4j.Logger;
@@ -84,46 +85,46 @@ public class EDLS extends IdentifyTool {
          */
         List<Tag> actuallist = environment.getActualTagList();
         System.out.println("actual tag num:"+actuallist.size());
-        
+
 //        int res1 = LoF.estimate(environment.getActualTagList());
 //        int res2 = MultiHashLoF.estimate(environment.getActualTagList());
-        int res3 = MultisplittingLoF.estimate(actuallist,0.0);
+//        int res3 = MultisplittingLoF.estimate(actuallist,0.0);
 //        System.out.println("lof:"+res1);
 //        System.out.println("multi hash："+res2);
-        System.out.println("multi split:"+res3);
-//        identify();
-////
-//        // 第二阶段所有阅读器的执行时间中最长的作为第二阶段的时间
-//        double maxTime2 = 0;
-//        for(Reader_M reader_m : readers) {
-//            double t1 = reader_m.recorder.totalExecutionTime;
-//            if(t1 > maxTime2) {
-//                maxTime2 = t1;
-//            }
-//        }
-//        recorder.totalExecutionTime = maxTime2;
-//        logger.error("第二阶段结束, 所有阅读器的总时间:[ "+maxTime2+" ]ms");
+//        System.out.println("multi split:"+res3);
+        identify();
 //
-//        readers.forEach(reader_m -> recorder.actualCids.addAll(reader_m.recorder.actualCids));
-//
-//        environment.getExpectedTagList().forEach(tag -> {
-//            String cid = tag.getCategoryID();
-//            if(!recorder.actualCids.contains(cid)){
-//                recorder.missingCids.add(cid);
-//            }
-//        });
-//        recorder.correctRate = 1-(expectedCidNum-expectedActualCidNum-recorder.missingCids.size())*1.0/(expectedCidNum);
-//
-//        System.out.println(" ");
-//        Recorder recorder1 = environment.getReaderList().get(0).recorder;
-//        System.out.println("总时间:"+recorder.totalExecutionTime);
-//        System.out.println("缺失率列表:"+recorder1.missingRateList);
-//        System.out.println("执行时间列表:"+recorder1.executionTimeList);
-//        System.out.println("识别类别列表:"+recorder1.recognizedCidNumList);
-//        System.out.println("识别存在类别列表:"+recorder1.recognizedActualCidNumList);
-//        System.out.println("识别缺失类别列表:"+recorder1.recognizedMissingCidNumList);
-//        System.out.println("误判标签数:"+(expectedCidNum-expectedActualCidNum-recorder.missingCids.size())+"准确率:"+recorder.correctRate);
-//        System.out.println("去除的意外标签数:"+recorder.eliminateTagList.size());
+        // 第二阶段所有阅读器的执行时间中最长的作为第二阶段的时间
+        double maxTime2 = 0;
+        for(Reader_M reader_m : readers) {
+            double t1 = reader_m.recorder.totalExecutionTime;
+            if(t1 > maxTime2) {
+                maxTime2 = t1;
+            }
+        }
+        recorder.totalExecutionTime = maxTime2;
+        logger.error("第二阶段结束, 所有阅读器的总时间:[ "+maxTime2+" ]ms");
+
+        readers.forEach(reader_m -> recorder.actualCids.addAll(reader_m.recorder.actualCids));
+
+        environment.getExpectedTagList().forEach(tag -> {
+            String cid = tag.getCategoryID();
+            if(!recorder.actualCids.contains(cid)){
+                recorder.missingCids.add(cid);
+            }
+        });
+        recorder.correctRate = 1-(expectedCidNum-expectedActualCidNum-recorder.missingCids.size())*1.0/(expectedCidNum);
+
+        System.out.println(" ");
+        Recorder recorder1 = environment.getReaderList().get(0).recorder;
+        System.out.println("总时间:"+recorder.totalExecutionTime);
+        System.out.println("缺失率列表:"+recorder1.missingRateList);
+        System.out.println("执行时间列表:"+recorder1.executionTimeList);
+        System.out.println("识别类别列表:"+recorder1.recognizedCidNumList);
+        System.out.println("识别存在类别列表:"+recorder1.recognizedActualCidNumList);
+        System.out.println("识别缺失类别列表:"+recorder1.recognizedMissingCidNumList);
+        System.out.println("误判标签数:"+(expectedCidNum-expectedActualCidNum-recorder.missingCids.size())+"准确率:"+recorder.correctRate);
+        System.out.println("去除的意外标签数:"+recorder.eliminateTagList.size());
     }
 
     /**
@@ -194,8 +195,8 @@ public class EDLS extends IdentifyTool {
         Set<String> expectedCidSet = new HashSet<>();
         expectedTagList.forEach(tag -> expectedCidSet.add(tag.getCategoryID()));
 //        int expectedCidNum = expectedCidSet.size();
-        int expectedCidNum = LoF.estimate(environment.getActualTagList());
-
+        int expectedCidNum = MultiHashLoF.estimate(environment.getActualTagList());
+        System.out.println("该阅读器需要识别的类别数=[ "+expectedCidNum+" ] 该阅读器识别范围内真实存在的类别数=[ "+expectedActualCidNum+" ]");
         logger.info("该阅读器需要识别的类别数=[ "+expectedCidNum+" ] 该阅读器识别范围内真实存在的类别数=[ "+expectedActualCidNum+" ]");
         double missRate = (expectedCidNum - expectedActualCidNum) * 1.0 / expectedCidNum;
 
