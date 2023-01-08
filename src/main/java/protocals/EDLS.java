@@ -181,7 +181,7 @@ public class EDLS extends IdentifyTool {
         int threeTurnToZero = 0;
         int twoTurnToOne = 0;
         int twoTurnToTwo = 0;
-        int threeTurnToOne = 0;
+        int threeTurnToOn = 0;
         int threeTurnToTwo = 0;
         int threeTurnToThree = 0;
 
