@@ -45,6 +45,7 @@ public class MultisplittingLoF {
 		for(Tag tag : tagList){
 			cidset.add(tag.getCategoryID());
 		}
+		System.out.println("actual cid num:"+cidset.size());
 		Map<String,List<String>> cidRandomlistMap = new HashMap<>();
 		for(String cid : cidset){
 			List<String> randomList = new ArrayList<>();
@@ -57,6 +58,11 @@ public class MultisplittingLoF {
 			}
 			cidRandomlistMap.put(cid,randomList);
 		}
+		for(Tag tag : tagList) {
+			tag.setPseudoRandomList(cidRandomlistMap.get(tag.categoryID));
+			tag.setPseudoRanStrLen(hashStrLength);
+			tag.setPseudoRanListLen(hashNum);
+		}
 		return cidRandomlistMap;
 	}
 	
@@ -65,10 +71,12 @@ public class MultisplittingLoF {
 	 * @return 估计的数量
 	 */
 	public static int estimate(List<Tag> tagList, double errorRate) {
+		// add
+		genMap(tagList);
 		
 		// 获得循环的数量
 		int hashNum = tagList.get(0).getPseudoRanListLen();
-				
+
 		// 将所有标签放入tagListMap，以进行第一次估计
 		tagListMap.put(tagList, 1);
 				

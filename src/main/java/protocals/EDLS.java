@@ -86,13 +86,16 @@ public class EDLS extends IdentifyTool {
          * 第二阶段, 识别存在的类别和缺失的类别的阶段
          */
         List<Tag> actuallist = environment.getActualTagList();
+        System.out.println("actual tag num:"+actuallist.size());
 
-        InitPseudoByCate.initPseudoRandomListByCate(actuallist, 100, 15);
+//        InitPseudoByCate.initPseudoRandomListByCate(actuallist, 100, 15);
 
-        LoF.estimate(environment.getActualTagList());
-        int res1 = MultiHashLoF.estimate(environment.getActualTagList());
-        int res2 = MultisplittingLoF.estimate(actuallist,0.0);
-        System.out.println("multi hash:"+res2);
+//        int res1 = LoF.estimate(environment.getActualTagList());
+//        int res2 = MultiHashLoF.estimate(environment.getActualTagList());
+        int res3 = MultisplittingLoF.estimate(actuallist,0.0);
+//        System.out.println("lof:"+res1);
+//        System.out.println("multi hash："+res2);
+        System.out.println("multi split:"+res3);
 //        identify();
 ////
 //        // 第二阶段所有阅读器的执行时间中最长的作为第二阶段的时间

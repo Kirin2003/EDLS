@@ -46,6 +46,11 @@ public class MultiHashLoF {
 			}
 			cidRandomlistMap.put(cid,randomList);
 		}
+		for(Tag tag : tagList) {
+			tag.setPseudoRandomList(cidRandomlistMap.get(tag.categoryID));
+			tag.setPseudoRanStrLen(hashStrLength);
+			tag.setPseudoRanListLen(hashNum);
+		}
 		return cidRandomlistMap;
 	}
 	
@@ -102,6 +107,8 @@ public class MultiHashLoF {
 	 * @return 估计的数量
 	 */
 	public static int estimate(List<Tag> tagList) {
+		// add
+		genMap(tagList);
 		// 标签的总值
 		int sumN = 0;
 

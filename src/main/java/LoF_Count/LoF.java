@@ -34,6 +34,7 @@ public class LoF {
 		for(Tag tag : tagList){
 			cidset.add(tag.getCategoryID());
 		}
+		System.out.println("real cid num:"+cidset.size());
 		Map<String,List<String>> cidRandomlistMap = new HashMap<>();
 		for(String cid : cidset){
 			List<String> randomList = new ArrayList<>();
@@ -46,6 +47,11 @@ public class LoF {
 			}
 			cidRandomlistMap.put(cid,randomList);
 		}
+		for(Tag tag : tagList) {
+			tag.setPseudoRandomList(cidRandomlistMap.get(tag.categoryID));
+			tag.setPseudoRanStrLen(hashStrLength);
+			tag.setPseudoRanListLen(hashNum);
+		}
 		return cidRandomlistMap;
 	}
 
@@ -55,6 +61,8 @@ public class LoF {
 	 * @return 估计的数量
 	 */
 	public static int estimate(List<Tag> tagList) {
+		// add
+		genMap(tagList);
 		// 获得标签hash长度
 		int hashLength = tagList.get(0).getPseudoRandomList().get(10).length();
 
