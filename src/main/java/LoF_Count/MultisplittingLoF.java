@@ -162,9 +162,7 @@ public class MultisplittingLoF {
 				int hash = hash(t, round - 1);
 				if (hash == i) {
 					slotResponse.put(t, hash);
-					if (slotInfo[hashLength - 1 - i] == 0) {
 						slotInfo[hashLength - 1 - i] = 1;
-					}
 					// 打印在该slot返回的tagID
 					//System.out.println("tagID:" + t.getTagID() + " " + "tagHash:" + t.getPseudoRandomList().get(10 + round - 1) + " " + "selectSlot:" + hash);
 				}
@@ -196,12 +194,17 @@ public class MultisplittingLoF {
 		
 		for (int i = 0; i < hashLength; i++) {
 			List<Tag> taglist = getTag(slotResponse, i);
+			Set<String> cidset = new HashSet<>();
+			for(Tag tag : taglist) {
+				cidset.add(tag.categoryID);
+			}
+			// 修改，冲突的条件改为有多个类别ID
 			// 该slot有冲突
-			if (taglist.size() > 1) {
+			if (cidset.size() > 1) {
 				tagListMap.put(taglist, round + 1);
 			}
 			// 该slot只有一个标签
-			if (taglist.size() == 1) {
+			if (cidset.size() == 1) {
 				identifiedTag.put(taglist.get(0), round);
 				//System.out.println("Tag " + taglist.get(0).getTagID() + " is identified!");
 			}

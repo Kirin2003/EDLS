@@ -1,12 +1,9 @@
 package protocals;
 
-import LoF_Count.InitPseudoByCate;
 import LoF_Count.LoF;
-import LoF_Count.MultiHashLoF;
 import LoF_Count.MultisplittingLoF;
 import base.Tag;
 import org.apache.logging.log4j.Logger;
-import protocals.IdentifyTool;
 import utils.*;
 
 import java.util.*;
@@ -87,9 +84,7 @@ public class EDLS extends IdentifyTool {
          */
         List<Tag> actuallist = environment.getActualTagList();
         System.out.println("actual tag num:"+actuallist.size());
-
-//        InitPseudoByCate.initPseudoRandomListByCate(actuallist, 100, 15);
-
+        
 //        int res1 = LoF.estimate(environment.getActualTagList());
 //        int res2 = MultiHashLoF.estimate(environment.getActualTagList());
         int res3 = MultisplittingLoF.estimate(actuallist,0.0);
