@@ -14,7 +14,7 @@ import java.util.List;
  * @author Kirin Huang
  * @date 2022/8/12 下午4:53
  */
-public class EDLS_Main {
+public class LOF_EDLS_Main {
     public static void main(String[] args) {
         int instanceNumber = 1;
         int allTagNumber = 1000;
@@ -23,7 +23,7 @@ public class EDLS_Main {
         int missingTagNumber = (int)(expectedTagNum * 0.2);
         int tagIDLength = 96;
         int categoryIDLength = 32;
-        Logger logger = LogManager.getLogger(EDLS_Main.class);
+        Logger logger = LogManager.getLogger(LOF_EDLS_Main.class);
 
         logger.error("Total number of tags: [" + allTagNumber + "]");
         logger.error("Total number of expected tags: [" + (allTagNumber - unknownTagNumber) + "]");
@@ -46,7 +46,7 @@ public class EDLS_Main {
             // single reader
             environment.createType1(4000, 1600, 1, 1);
 
-            EDLS edls = new EDLS(logger,recorder,environment);
+            LOF_EDLS edls = new LOF_EDLS(logger,recorder,environment);
             edls.execute();
         }
     }

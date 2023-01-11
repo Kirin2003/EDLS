@@ -1,6 +1,8 @@
 package LoF_Count;
 
 import base.Tag;
+import utils.Environment;
+import utils.Recorder;
 
 import java.util.*;
 
@@ -12,7 +14,7 @@ import java.util.*;
  */
 public class MultiHashLoF {
 	public static int hashStrLength = 20;
-	public static int hashNum = 15;
+	public static int hashNum = 10;
 
 	/**
 	 * 计算哈希值，哈希值为tag里0、1序列的从右往左的第一个1的位置
@@ -23,10 +25,6 @@ public class MultiHashLoF {
 	public static int hash(Tag tag, int num) {
 		String hashNum = tag.getPseudoRandomList().get(num);
 		return hashNum.length() - 1 - hashNum.lastIndexOf("1");
-	}
-
-	public static int hash2(String str){
-		return str.length() - 1 - str.lastIndexOf("1");
 	}
 
 	public static Map<String,List<String>> genMap(List<Tag> tagList) {
@@ -52,54 +50,6 @@ public class MultiHashLoF {
 			tag.setPseudoRanListLen(hashNum);
 		}
 		return cidRandomlistMap;
-	}
-	
-	/**
-	 * 估计标签序列中的类别数量
-	 * @return 估计的数量
-	 */
-	public static int estimate2(List<Tag> tagList) {
-		Map<String, List<String>> cidRandomListMap = genMap(tagList);
-		// 估算结果
-		int sumN = 0;
-		
-		// 获得循环的数量
-		int loopNum = hashNum;
-
-		// 获得标签hash长度
-		int hashLength = hashStrLength;
-
-		// 循环
-		for (int multiHash = 0; multiHash < loopNum; multiHash++) {
-
-			// 记录slot信息的数组
-			byte[] slotInfo = new byte[hashLength];
-
-			// 生成bit map
-			for(String cid : cidRandomListMap.keySet()) {
-				String random = cidRandomListMap.get(cid).get(multiHash);
-				int i1 = hash2(random);
-				slotInfo[hashLength-1-i1]=1;
-			}
-
-			// 估算
-			int R = 0;//R是slotInfo中最右边0的位置
-			for(int i = slotInfo.length-1; i>0;i--){
-				if(slotInfo[i]==0){
-					R=hashLength-1-i;
-					break;
-				}
-			}
-
-			// n为估计的标签数量
-			int n = (int) (1.2897 * Math.pow(2, R));
-			sumN += n;
-		}
-		
-
-		//System.out.println("--------------------");
-		// System.out.println(sumN + " " + hashNum);
-		return sumN / loopNum;
 	}
 
 	/**
@@ -140,6 +90,7 @@ public class MultiHashLoF {
 				// Sudden Victory机制
 				if (slotInfo[hashLength - 1 - i] == 0) {
 					//System.out.println("Sudden Victory!");
+
 					break;
 				}
 			}
@@ -165,6 +116,70 @@ public class MultiHashLoF {
 
 			sumN += n;
 		}
+
+
+		//System.out.println("--------------------");
+		// System.out.println(sumN + " " + hashNum);
+		return sumN / hashNum;
+	}
+
+	/**
+	 * 估计标签数量
+	 * @return 估计的数量
+	 */
+	public static int estimate(List<Tag> tagList, Recorder recorder) {
+		// add
+		genMap(tagList);
+		// 标签的总值
+		int sumN = 0;
+
+		// 获得循环的数量,本项目为10
+		int hashNum = tagList.get(0).getPseudoRanListLen();
+
+		// 获得标签hash长度,本项目为20
+		int hashLength = tagList.get(0).getPseudoRandomList().get(0).length();
+
+		// 总共经历的时隙数,(包括reader query = 4 * slot)
+		int slotNum = 0;
+
+		// 循环hashNum次
+		for (int multiHash = 0; multiHash < hashNum; multiHash++) {
+			// 总的记录slot信息的数组
+			byte[] slotInfo = new byte[hashLength];
+
+			//System.out.println("info of estimation:--------------------" + "the " + (multiHash + 1) + " round");
+
+			for(Tag t : tagList) {
+				int i = hash(t,multiHash);
+				slotInfo[hashLength-i-1]=1;
+			}
+			for(int i = 0; i < hashLength; i++) {
+//				System.out.print(slotInfo[i]);
+			}
+//			System.out.println();
+
+			int R = 0;
+			for(int i = hashLength-1; i >= 0; i--) {
+				if(slotInfo[i]== 0) {
+					// sudden victory机制
+					slotNum += hashLength-i;
+					slotNum += 8;
+					R = hashLength-1-i;
+					break;
+				}
+			}
+
+
+			//System.out.println();
+			//System.out.println("--------");
+			// n为估计的标签数量
+			int n = (int) (1.2897 * Math.pow(2, R));
+
+			sumN += n;
+		}
+		System.out.println("使用LOF估算类别数花费的时间:"+slotNum*0.4+"ms");
+		System.out.println("估算的类别为:"+sumN/hashNum);
+		recorder.totalExecutionTime+=slotNum*0.4;
 
 
 		//System.out.println("--------------------");

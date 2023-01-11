@@ -84,7 +84,7 @@ public class LoF {
 
 		//system.out.println("slotInfo:");
 		for (int i = 0; i < slotInfo.length; i++) {
-			//system.out.print(slotInfo[i] + " ");
+			System.out.print(slotInfo[i] + " ");
 		}
 
 		// R是数组allSlotInfo最右边0的位置

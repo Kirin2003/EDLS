@@ -1,8 +1,6 @@
 package protocals;
 
-import LoF_Count.LoF;
 import LoF_Count.MultiHashLoF;
-import LoF_Count.MultisplittingLoF;
 import base.Tag;
 import org.apache.logging.log4j.Logger;
 import utils.*;
@@ -13,7 +11,7 @@ import java.util.*;
  * @author Kirin Huang
  * @date 2022/8/8 下午10:19
  */
-public class EDLS extends IdentifyTool {
+public class LOF_EDLS extends IdentifyTool {
     /**
      * 哈希函数的个数, 用于意外标签去除阶段
      */
@@ -30,7 +28,7 @@ public class EDLS extends IdentifyTool {
      * @param recorder 记录器, 记录算法输出结果
      * @param environment 环境,里面有标签的数目,标签id和类别id列表,位置等信息和阅读器的数目,位置等信息
      */
-    public EDLS(Logger logger, Recorder recorder, Environment environment) {
+    public LOF_EDLS(Logger logger, Recorder recorder, Environment environment) {
         super(logger, recorder, environment);
     }
 
@@ -194,7 +192,10 @@ public class EDLS extends IdentifyTool {
 
         Set<String> expectedCidSet = new HashSet<>();
         expectedTagList.forEach(tag -> expectedCidSet.add(tag.getCategoryID()));
-        int expectedCidNum = expectedCidSet.size();
+
+        // 使用LOF估算类别数目
+        int expectedCidNum = MultiHashLoF.estimate(environment.getActualTagList(),reader_m.recorder);
+
         System.out.println("该阅读器需要识别的类别数=[ "+expectedCidNum+" ] 该阅读器识别范围内真实存在的类别数=[ "+expectedActualCidNum+" ]");
         logger.info("该阅读器需要识别的类别数=[ "+expectedCidNum+" ] 该阅读器识别范围内真实存在的类别数=[ "+expectedActualCidNum+" ]");
         double missRate = (expectedCidNum - expectedActualCidNum) * 1.0 / expectedCidNum;
