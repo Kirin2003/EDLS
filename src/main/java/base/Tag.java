@@ -22,6 +22,9 @@ public class Tag {
     protected int pseudoRanStrLen; //Length of the TagID
     protected int pseudoRanListLen; //Length of the tag List
 
+    // add in SEM
+    protected String SOstr = "";
+
     public Tag(int pseudoRanStrLen,int pseudoRanListLen) {
         initPseudoRandomList(pseudoRanStrLen, pseudoRanListLen);
     }
@@ -262,5 +265,11 @@ public class Tag {
         this.pseudoRanStrLen = pseudoRanStrLen;
     }
 
+    public String getSOstr() {
+        return SOstr;
+    }
 
+    public void setSOstr(String SOstr) {
+        this.SOstr = SOstr;
+    }
 }

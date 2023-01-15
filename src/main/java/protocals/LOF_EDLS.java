@@ -21,6 +21,11 @@ public class LOF_EDLS extends IdentifyTool {
      */
     double falsePositiveRatio = 0.01;
 
+    /**
+     * 结束标志, 没有冲突时隙则结束
+     */
+    boolean flag = true;
+
 
     /**
      * EDLS构造函数
@@ -206,7 +211,10 @@ public class LOF_EDLS extends IdentifyTool {
         Map<Integer, List<Tag>> collisionTagListMap = new HashMap<>(); // 冲突时隙的时隙-标签列表映射
         int collisionTagListIndex = 0;
         int repeat = 0;
-        while (recognizedCidNum < expectedCidNum) { // 当识别数目小于期望标签数目时一直循环
+        while (flag) { // 当识别数目小于期望标签数目时一直循环
+            // 结束标志，如果没有冲突时隙循环就结束
+            flag = false;
+
             ++recorder1.roundCount;
 
             logger.info("################### 第 "+recorder1.roundCount+" 轮 #######################");
@@ -350,8 +358,6 @@ public class LOF_EDLS extends IdentifyTool {
             int slotLength = filterVector.size();
             int roundSlotCount = 0;
 
-            // 结束标志，如果没有冲突时隙循环就结束
-            boolean flag = false;
 
             if(useCLS) {
                 for (int i = 0; i < slotLength; i++) {
@@ -443,6 +449,7 @@ public class LOF_EDLS extends IdentifyTool {
                         recorder1.missingCids.add(cid1);
 
                     } else {
+                        flag = true;
                         // 存在
                         // 认为该类别存在(有可能为意外标签的干扰,即假阳性错误)
                         String cid1 = expMap.get(i).get(0).getCategoryID();
@@ -510,7 +517,7 @@ public class LOF_EDLS extends IdentifyTool {
         recorder1.recognizedCidNum = recorder1.actualCids.size() + recorder1.missingCids.size();
         // 准确率,1-假阳性概率
         recorder1.correctRate = 1-(expectedCidNum - expectedActualCidNum-recorder1.recognizedMissingCidNum)*1.0/(expectedCidNum);
-        System.out.println(" " );
+        System.out.println( );
     }
  
      private int SFMTI_OptimizeFrame(int expectedCidNum, int recognizedCidNum) {
@@ -786,6 +793,7 @@ public class LOF_EDLS extends IdentifyTool {
             int element = filterVector.get(k);
             if(element > 3){
                 filterVector.set(k, 0); // 大于3的冲突时隙设为0, 忽略
+                flag = true;
                 logger.debug("时隙 = " + k + " 类别 = "+ resultMap.get(k));
             }else if(element == 2 || element == 3){
                 int total = element;
