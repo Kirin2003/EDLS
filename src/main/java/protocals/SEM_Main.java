@@ -18,9 +18,9 @@ public class SEM_Main {
     public static void main(String[] args) {
         int instanceNumber = 1;
         int allTagNumber = 10000;
-        int unknownTagNumber = 10;
+        int unknownTagNumber = 0;
         int expectedTagNum = allTagNumber - unknownTagNumber;
-        int missingTagNumber = 0;
+        int missingTagNumber = 2000;
         int tagIDLength = 96;
         int categoryIDLength = 32;
         Logger logger = LogManager.getLogger(SEM_Main.class);

@@ -29,7 +29,7 @@ public class SEM {
         }
         int i = 0;
         for(String cid : cidSet) {
-            String SOstr = genSOstr(cid.length(),i);
+            String SOstr = genSOstr(cidSet.size(),i);
             cateMap.put(cid,SOstr);
             cateList.add(cid);
             i++;
