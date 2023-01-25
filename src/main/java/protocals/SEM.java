@@ -16,6 +16,15 @@ public class SEM {
     private List<String> physicalFrame = new ArrayList<>();
     private List<String> logicalFrame = new ArrayList<>();
 
+    private int k;
+    private int f;
+    private int f2;
+    private int nx;//具有最少标签数的类别的标签数
+    private int ny;//具有最多标签数的类别的标签数
+
+    private double alpha = 0.05;//confidence
+    private double beta = 0.95;//accuracy
+
     public SEM(Logger logger, Recorder recorder, Environment environment) {
         this.logger = logger;
         this.recorder = recorder;
@@ -120,6 +129,56 @@ public class SEM {
             }
         }
         return str.toString();
+    }
+
+    private void optimize_k() {
+        double k1 = Math.pow(f*1.96/(alpha*nx),2)*(Math.exp(nx/f)-1)/f2;//TODO,是(alpha*nx)吗
+        k = (int)k1;
+    }
+
+    private double optimize_f2_and_f() {
+        int f2;
+        double minTime = Double.POSITIVE_INFINITY;
+        for(f2 = 1;f2<=512;f2++){
+            int left = f2;
+            int right = 3*ny;
+            int mid;
+            while(left < right) {
+                mid = left + (right-left)/2;
+                if(getTimeFirstOrder(mid,f2,ny)<0) {//TODO,是ny吗?
+                    left = mid;
+                } else {
+                    right = mid;
+                }
+            }
+            if(nx==ny) {
+                double time1 = getTime(left,f2,ny);
+                if(time1 < minTime) {
+                    minTime = time1;
+                }
+            } else {
+                double time1 = getTime(left,f2,nx);
+                double time2 = getTime(left,f2,ny);
+                if(Math.max(time1,time2)<minTime) {
+                    minTime = Math.max(time1,time2);
+                }
+            }
+
+
+        }
+        return minTime;
+    }
+
+    private double getTime(int f,int f2,int ni) {
+        double t1 = 0;//TODO
+        double t = Math.pow(f*1.96,2)*(Math.exp(ni*1.0/f)-1)*(t1+f2*0.4)/(f2*Math.pow(alpha*ni,2));
+        return t;
+    }
+
+    private double getTimeFirstOrder(int f,int f2,int ni) {
+        double t1 = 0;//TODO
+        double t = (t1+f2*0.4)*(Math.pow(f*1.96,2)/(f2*alpha*alpha*ni*ni)*(-2/ni*(Math.exp(ni/f)-1)+Math.exp(ni/f)/f));
+        return t;
     }
 
 }
