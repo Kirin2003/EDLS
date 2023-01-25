@@ -211,7 +211,7 @@ public class LOF_EDLS extends IdentifyTool {
         Map<Integer, List<Tag>> collisionTagListMap = new HashMap<>(); // 冲突时隙的时隙-标签列表映射
         int collisionTagListIndex = 0;
         int repeat = 0;
-        while (flag) { // 当识别数目小于期望标签数目时一直循环
+        while (flag) { // 当有冲突时隙时一直循环
             // 结束标志，如果没有冲突时隙循环就结束
             flag = false;
 

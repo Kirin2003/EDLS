@@ -179,7 +179,7 @@ public class MultiHashLoF {
 		}
 		System.out.println("使用LOF估算类别数花费的时间:"+slotNum*0.4+"ms");
 		System.out.println("估算的类别为:"+sumN/hashNum);
-		recorder.totalExecutionTime+=slotNum*0.4;
+		recorder.totalExecutionTime+=(slotNum+80)*0.4;
 
 
 		//System.out.println("--------------------");
