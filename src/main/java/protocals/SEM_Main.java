@@ -42,11 +42,11 @@ public class SEM_Main {
 
             Environment environment = new Environment(allTagList, expectedTagList, tagList,expectedTagNum/10);
 
-            environment.createType1(4000, 1600, 5, 2);
+            environment.createType1(4000, 1600, 1, 1);
 
             SEM sem = new SEM(logger,recorder,environment);
 //            sem.identify();
-            sem.computeTime();
+            sem.optimizeParams();
         }
     }
 }
