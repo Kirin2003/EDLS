@@ -45,7 +45,8 @@ public class SEM_Main {
             environment.createType1(4000, 1600, 5, 2);
 
             SEM sem = new SEM(logger,recorder,environment);
-            sem.identify();
+//            sem.identify();
+            sem.computeTime();
         }
     }
 }

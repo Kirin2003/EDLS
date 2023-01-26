@@ -69,7 +69,7 @@ public class SEM {
 
     public void decode() {
         int cateNum = cateMap.size();
-        int frameSize = physicalFrame.size();
+        int frameSize = f2;
         for(int i = 0; i < cateNum; i++) {
             StringBuilder sb = new StringBuilder();
             for (int j = 0; j < frameSize; j++) {
@@ -84,19 +84,30 @@ public class SEM {
     }
 
     public void identify() {
+        computeTime();
         initSOstr(environment.getExpectedTagList());
-        int f = 100;//时隙长怎么取 TODO
-        int rand = (int) (100 * Math.random());
-        response(f,rand);
-        decode();
-        int cateNum = cateMap.size();
-        for(int i = 0; i < cateNum; i++) {
-            String bitVec = logicalFrame.get(i);
-            String cid = cateList.get(i);
-            if(bitVec.contains("1") || bitVec.contains("X")) {
-                recorder.actualCids.add(cid);
-            } else {
-                recorder.missingCids.add(cid);
+        for(int i1 = 0; i1 < k; i1++) {
+            long t = System.currentTimeMillis();
+            Random rd = new Random(t);
+            int rand = rd.nextInt();
+
+            response(f, rand);
+            decode();
+            int cateNum = cateMap.size();
+            for (int i = 0; i < cateNum; i++) {
+                String bitVec = logicalFrame.get(i);
+                String cid = cateList.get(i);
+                // 估算该类别的标签数
+                String subBitVec = bitVec.substring(0, f2 - 1);
+                if (subBitVec.indexOf('1') != -1) {
+                    recorder.actualCids.add(cid);
+                }
+            }
+            for(int i = 0; i < cateNum; i++) {
+                String cid = cateList.get(i);
+                if(!recorder.actualCids.contains(cid)){
+                    recorder.missingCids.add(cid);
+                }
             }
         }
         System.out.println("缺失的类别数:"+recorder.missingCids.size());
@@ -132,34 +143,38 @@ public class SEM {
     }
 
     private void optimize_k() {
-        double k1 = Math.pow(f*1.96/(alpha*nx),2)*(Math.exp(nx/f)-1)/f2;//TODO,是(alpha*nx)吗
+        double k1 = Math.pow(f*1.96/(alpha*nx),2)*(Math.exp(nx*1.0/f)-1)/f2;//TODO,是(alpha*nx)吗
         k = (int)k1;
     }
 
     private double optimize_f2_and_f() {
-        int f2;
+        int f2_temp;
         double minTime = Double.POSITIVE_INFINITY;
-        for(f2 = 1;f2<=512;f2++){
-            int left = f2;
+        for(f2_temp = 20;f2_temp<=512;f2_temp++){
+            int left = f2_temp;
             int right = 3*ny;
             int mid;
             while(left < right) {
                 mid = left + (right-left)/2;
-                if(getTimeFirstOrder(mid,f2,ny)<0) {//TODO,是ny吗?
+                if(getTimeFirstOrder(mid,f2_temp,ny)<0) {//TODO,是ny吗?
                     left = mid;
                 } else {
                     right = mid;
                 }
             }
             if(nx==ny) {
-                double time1 = getTime(left,f2,ny);
+                double time1 = getTime(left,f2_temp,ny);
                 if(time1 < minTime) {
+                    f2 = f2_temp;
+                    f=left;
                     minTime = time1;
                 }
             } else {
-                double time1 = getTime(left,f2,nx);
-                double time2 = getTime(left,f2,ny);
+                double time1 = getTime(left,f2_temp,nx);
+                double time2 = getTime(left,f2_temp,ny);
                 if(Math.max(time1,time2)<minTime) {
+                    f2 = f2_temp;
+                    f=left;
                     minTime = Math.max(time1,time2);
                 }
             }
@@ -177,7 +192,15 @@ public class SEM {
 
     private double getTimeFirstOrder(int f,int f2,int ni) {
         double t1 = 0;//TODO
-        double t = (t1+f2*0.4)*(Math.pow(f*1.96,2)/(f2*alpha*alpha*ni*ni)*(-2/ni*(Math.exp(ni/f)-1)+Math.exp(ni/f)/f));
+        double t = (t1+f2*0.4)*(Math.pow(f*1.96,2)/(f2*alpha*alpha*ni*ni)*(-2.0/ni*(Math.exp(ni*1.0/f)-1)+Math.exp(ni*1.0/f)/f));
+        return t;
+    }
+
+    public double computeTime() {
+        double minTime1 = optimize_f2_and_f();
+        optimize_k();
+        double t = k*minTime1;
+        System.out.println("优化系数:k,f,f2,minTime1="+k+" "+f+" "+f2+" "+minTime1);
         return t;
     }
 
