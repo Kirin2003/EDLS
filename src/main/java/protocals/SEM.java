@@ -197,6 +197,7 @@ public class SEM {
             minTime = minTime1;
             optimize_k(nx);
         } else {
+            System.out.println("+++nx!=ny");
             double minTime1 = optimize_f2_and_f(nx);
             int tempfx = f;
             int tempf2x = f2;
@@ -218,14 +219,19 @@ public class SEM {
     }
 
     private double getTime(int f,int f2,int ni) {
-        double t1 = cateNum*0.025;
-        double t = Math.pow(f*1.96,2)*(Math.exp(ni*1.0/f)-1)*(t1+f2*0.4)/(f2*Math.pow(alpha*ni,2));
+//        double tb = cateNum*0.025; //TODO 常数,先按论文里给的常数复现论文的结果
+//        double t = Math.pow(f*1.96,2)*(Math.exp(ni*1.0/f)-1)*(tb+f2*0.4)/(f2*Math.pow(alpha*ni,2));
+        // TODO 按论文里给的常数复现论文的结果
+        double tb = cateNum*0.0188; //TODO 常数,先按论文里给的常数复现论文的结果
+        double t = Math.pow(f*1.96,2)*(Math.exp(ni*1.0/f)-1)*(tb+f2*0.302)/(f2*Math.pow(alpha*ni,2));
         return t;
     }
 
     private double getTimeFirstOrder(int f,int f2,int ni) {
-        double t1 = cateNum*0.025;
-        double t = (t1+f2*0.4)*1.96*1.96/(f2*(Math.pow(alpha*ni,2)))*(2*f*(Math.exp(ni*1.0/f)-1)-Math.exp(ni*1.0/f)*ni);
+//        double tb = cateNum*0.025; // TODO 常数,
+//        double t = (tb+f2*0.4)*1.96*1.96/(f2*(Math.pow(alpha*ni,2)))*(2*f*(Math.exp(ni*1.0/f)-1)-Math.exp(ni*1.0/f)*ni);
+        double tb = cateNum*0.0188; //TODO 常数,先按论文里给的常数复现论文的结果
+        double t = Math.pow(f*1.96,2)*(Math.exp(ni*1.0/f)-1)*(tb+f2*0.302)/(f2*Math.pow(alpha*ni,2));
         return t;
     }
 

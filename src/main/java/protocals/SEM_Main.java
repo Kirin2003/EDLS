@@ -17,14 +17,14 @@ import java.util.List;
 public class SEM_Main {
     public static void main(String[] args) {
         int instanceNumber = 1;
-        int allTagNumber = 110;
+        int allTagNumber = 100;
         int unknownTagNumber = 0;
         int expectedTagNum = allTagNumber - unknownTagNumber;
         int missingTagNumber = 0;
         int tagIDLength = 96;
         int categoryIDLength = 32;
 
-        int density = 110;
+        int density = 100;
         int nx = density;
         int ny = density;
 
