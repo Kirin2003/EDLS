@@ -31,7 +31,6 @@ public class SEM {
         this.logger = logger;
         this.recorder = recorder;
         this.environment = environment;
-        this.cateNum = environment.getExpectedCidNum();
         this.nx = environment.getNx();
         this.ny = environment.getNy();
     }
@@ -51,6 +50,7 @@ public class SEM {
         for(Tag tag : tagList) {
             tag.setSOstr(cateMap.get(tag.categoryID));
         }
+        cateNum = cidSet.size();
     }
 
     public void response(int f,int rand) {

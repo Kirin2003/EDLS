@@ -75,9 +75,13 @@ public class TagListGenerator {
      * @return the returned string can be used as a tagID
      */
     private static String getRandomID(int IDLength){
+        long t = System.currentTimeMillis();
+        Random rd = new Random(t);
+        double rand = rd.nextDouble();
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < IDLength; i++)
-            sb.append((Math.random()>0.5?'1':'0'));
+        for (int i = 0; i < IDLength; i++) {
+            sb.append((rd.nextDouble() > 0.5 ? '1' : '0'));
+        }
         return sb.toString();
     }
 
