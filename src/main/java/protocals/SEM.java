@@ -19,8 +19,8 @@ public class SEM {
     private int k;
     private int f;
     private int f2;
-    private int nx=10;//具有最少标签数的类别的标签数
-    private int ny=10;//具有最多标签数的类别的标签数
+    private int nx=100;//具有最少标签数的类别的标签数
+    private int ny=100;//具有最多标签数的类别的标签数
 
     private int cateNum = 0;
 
@@ -31,6 +31,9 @@ public class SEM {
         this.logger = logger;
         this.recorder = recorder;
         this.environment = environment;
+        this.cateNum = environment.getExpectedCidNum();
+        this.nx = environment.getNx();
+        this.ny = environment.getNy();
     }
 
     public void initSOstr(List<Tag> tagList) {
@@ -48,7 +51,6 @@ public class SEM {
         for(Tag tag : tagList) {
             tag.setSOstr(cateMap.get(tag.categoryID));
         }
-        cateNum = cateMap.size();
     }
 
     public void response(int f,int rand) {
@@ -86,8 +88,8 @@ public class SEM {
     }
 
     public void identify() {
-        optimizeParams();
         initSOstr(environment.getExpectedTagList());
+        optimizeParams();
         for(int i1 = 0; i1 < k; i1++) {
             long t = System.currentTimeMillis();
             Random rd = new Random(t);
@@ -158,19 +160,25 @@ public class SEM {
             System.out.println("f2_temp="+f2_temp);
             int left = f2_temp;
             int right = 3*ny;
-            int mid;
+            if(left>right) {
+                int tmp = left;
+                left = right;
+                right = tmp;
+            }
+            int mid = left + (right-left)/2;
             while(left < right-1) {
                 mid = left + (right-left)/2;
-                System.out.println("mid,left,right,first_order="+mid+" "+left+" "+right+" "+getTimeFirstOrder(mid,f2_temp,ni));
+//                System.out.println("mid,left,right,first_order<0?"+mid+" "+left+" "+right+" "+(getTimeFirstOrder(mid,f2_temp,ni)<0));
                 if(getTimeFirstOrder(mid,f2_temp,ni)<0) {
                     left = mid;
                 } else {
                     right = mid;
                 }
             }
-            tempf = left;
+            tempf = mid;
             tempf2 = f2_temp;
             tempMinTime = getTime(tempf,tempf2,ni);
+            System.out.println("-----tempf,tempf2,tempMinTime,mintime="+tempf+" "+tempf2+" "+tempMinTime+" "+minTime);
             if(tempMinTime < minTime) {
                 minTime = tempMinTime;
                 f = tempf;

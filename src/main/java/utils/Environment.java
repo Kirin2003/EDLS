@@ -31,6 +31,9 @@ public class Environment {
     private int actualCidNum = 0; // 真实存在的类别数
     private int missingCidNum = 0; // 缺失的类别数
 
+    private int nx = 0; // 拥有标签数最少的类别的标签数,为SEM加
+    private int ny = 0; // 拥有标签数最多的类别的标签数,为SEM加
+
     private Logger logger = LogManager.getLogger(Environment.class);
 
     public Environment(List<Tag> allTagList, List<Tag> expectedTagList, List<Tag> actualTagList){
@@ -44,6 +47,16 @@ public class Environment {
         this.expectedTagList = expectedTagList;
         this.actualTagList = actualTagList;
         this.expectedCidNum = expectedCidNum;
+    }
+
+    // 为SEM加
+    public Environment(List<Tag> allTagList, List<Tag> expectedTagList, List<Tag> actualTagList,int expectedCidNum,int nx,int ny) {
+        this.allTagList = allTagList;
+        this.expectedTagList = expectedTagList;
+        this.actualTagList = actualTagList;
+        this.expectedCidNum = expectedCidNum;
+        this.nx = nx;
+        this.ny = ny;
     }
 
     /**
@@ -349,5 +362,21 @@ public class Environment {
 
     public void setMissingCidNum(int missingCidNum) {
         this.missingCidNum = missingCidNum;
+    }
+
+    public int getNx() {
+        return nx;
+    }
+
+    public void setNx(int nx) {
+        this.nx = nx;
+    }
+
+    public int getNy() {
+        return ny;
+    }
+
+    public void setNy(int ny) {
+        this.ny = ny;
     }
 }

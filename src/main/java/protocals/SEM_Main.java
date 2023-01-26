@@ -23,6 +23,11 @@ public class SEM_Main {
         int missingTagNumber = 2000;
         int tagIDLength = 96;
         int categoryIDLength = 32;
+
+        int density = 50;
+        int nx = density;
+        int ny = density;
+
         Logger logger = LogManager.getLogger(SEM_Main.class);
 
         logger.error("Total number of tags: [" + allTagNumber + "]");
@@ -34,19 +39,19 @@ public class SEM_Main {
         for (int r = 0; r < instanceNumber; r++){
             logger.error("<<<<<<<<<<<<<<<<<<<< Instance: " + r + ">>>>>>>>>>>>>>>>>>>");
 
-            TagRepository tagRepository = TagListGenerator.generateTagRepository(tagIDLength, categoryIDLength, allTagNumber, 10,unknownTagNumber, missingTagNumber);
+            TagRepository tagRepository = TagListGenerator.generateTagRepository(tagIDLength, categoryIDLength, allTagNumber, density,unknownTagNumber, missingTagNumber);
             List<Tag> allTagList = tagRepository.getAllTagList();
             List<Tag> expectedTagList = tagRepository.getExpectedTagList();
             List<Tag> tagList = tagRepository.getActucaltagList();
 
 
-            Environment environment = new Environment(allTagList, expectedTagList, tagList,expectedTagNum/10);
+            Environment environment = new Environment(allTagList, expectedTagList, tagList,expectedTagNum/density,nx,ny);
 
             environment.createType1(4000, 1600, 1, 1);
 
             SEM sem = new SEM(logger,recorder,environment);
-//            sem.identify();
-            sem.optimizeParams();
+            sem.identify();
+//            sem.optimizeParams();
         }
     }
 }
