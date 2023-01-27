@@ -17,7 +17,7 @@ import java.util.List;
 public class SEM_Main {
     public static void main(String[] args) {
         int instanceNumber = 1;
-        int allTagNumber = 100;
+        int allTagNumber = 80000;
         int unknownTagNumber = 0;
         int expectedTagNum = allTagNumber - unknownTagNumber;
         int missingTagNumber = 0;
@@ -50,8 +50,10 @@ public class SEM_Main {
             environment.createType1(4000, 1600, 1, 1);
 
             SEM sem = new SEM(logger,recorder,environment);
-            sem.identify();
+//            sem.identify();
 //            sem.optimizeParams();
+            double time = sem.getTime(63,62,100);
+            System.out.println("time="+time);
         }
     }
 }
