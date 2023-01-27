@@ -17,14 +17,14 @@ import java.util.List;
 public class SEM_Main {
     public static void main(String[] args) {
         int instanceNumber = 1;
-        int allTagNumber = 80000;
+        int allTagNumber = 50000;
         int unknownTagNumber = 0;
         int expectedTagNum = allTagNumber - unknownTagNumber;
         int missingTagNumber = 0;
         int tagIDLength = 96;
         int categoryIDLength = 32;
 
-        int density = 100;
+        int density = 5000;
         int nx = density;
         int ny = density;
 
@@ -50,10 +50,11 @@ public class SEM_Main {
             environment.createType1(4000, 1600, 1, 1);
 
             SEM sem = new SEM(logger,recorder,environment);
-//            sem.identify();
+            sem.identify();
+//            sem.initSOstr(environment.getExpectedTagList());
 //            sem.optimizeParams();
-            double time = sem.getTime(63,62,100);
-            System.out.println("time="+time);
+//            double time = sem.getTime(68,68,100);
+//            System.out.println("time="+time+"ms");
         }
     }
 }

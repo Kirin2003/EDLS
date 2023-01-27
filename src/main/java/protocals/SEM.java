@@ -17,8 +17,8 @@ public class SEM {
     private List<String> logicalFrame = new ArrayList<>();
 
     private int k;
-    private int f;
-    private int f2;
+    private int f; //broadcast frame size
+    private int f2;//executed frame size
     private int nx=100;//具有最少标签数的类别的标签数
     private int ny=100;//具有最多标签数的类别的标签数
 
@@ -111,6 +111,10 @@ public class SEM {
     public void identify() {
         initSOstr(environment.getExpectedTagList());
         optimizeParams();
+//        f = 700;
+//        f2 = 512;
+//        optimize_k(ny);
+        int estimate = 0;
         for(int i1 = 0; i1 < k; i1++) {
             logger.info("++++++++++++第"+i1+"次++++++++++++");
             long t = System.currentTimeMillis();
@@ -123,16 +127,23 @@ public class SEM {
                 String bitVec = logicalFrame.get(i);
                 String cid = cateList.get(i);
                 // 估算该类别的标签数
-                String subBitVec = bitVec.substring(0, f2 - 1);
+                String subBitVec = bitVec.substring(0, f2);
                 if (subBitVec.indexOf('1') != -1 ) {
                     recorder.actualCids.add(cid);
+                    int tempNum = 0;
+                    for(int k = 0; k < f2; k++) {
+                        if(subBitVec.charAt(k)=='0') tempNum++;
+                    }
+                    System.out.println("subBitVec:"+subBitVec);
+                    estimate+=-f*Math.log(tempNum*1.0/f2);
                 }
             }
-            for(int i = 0; i < cateNum; i++) {
-                String cid = cateList.get(i);
-                if(!recorder.actualCids.contains(cid)){
-                    recorder.missingCids.add(cid);
-                }
+        }
+        System.out.println("estimate:"+estimate/k);
+        for(int i = 0; i < cateNum; i++) {
+            String cid = cateList.get(i);
+            if(!recorder.actualCids.contains(cid)){
+                recorder.missingCids.add(cid);
             }
         }
         System.out.println("缺失的类别数:"+recorder.missingCids.size());
@@ -178,9 +189,9 @@ public class SEM {
         return str.toString();
     }
 
-    private void optimize_k(int ni) {
-        double k1 = Math.pow(f*1.96/(alpha*ni),2)*(Math.exp(ni*1.0/f)-1)/f2;
-        k = (int)k1;
+    private int optimize_k(int ni) {
+        double k1 = Math.pow(f*1.96/(alpha*ni),2.0)*(Math.exp(ni*1.0/f)-1)/f2;
+        return (int)k1;
     }
 
     private double optimize_f2_and_f(int ni) {
@@ -224,11 +235,12 @@ public class SEM {
 
     // 测试,变成public
     public double optimizeParams() {
+        System.out.println("nx="+nx);
         double minTime;
         if(nx==ny) {
             double minTime1 = optimize_f2_and_f(nx);
             minTime = minTime1;
-            optimize_k(nx);
+            k = optimize_k(nx);
         } else {
             double minTime1 = optimize_f2_and_f(nx);
             int tempfx = f;
@@ -238,17 +250,17 @@ public class SEM {
                 minTime = minTime1;
                 f = tempfx;
                 f2 = tempf2x;
-                optimize_k(nx);
+                k = optimize_k(nx);
             } else {
                 minTime = minTime2;
-                optimize_k(ny);
+                k = optimize_k(ny);
             }
 
         }
         recorder.totalExecutionTime = minTime;
-        System.out.println("优化系数:k,f,f2,minTime="+k+" "+f+" "+f2+" "+minTime);
+        System.out.println("优化系数:k,f,f2,minTime="+k+" "+f+" "+f2+" "+minTime+"ms");
         logger.info("##############优化系数##############");
-        logger.info("系数:k,f,f2,minTime="+k+" "+f+" "+f2+" "+minTime);
+        logger.info("系数:k,f,f2,minTime="+k+" "+f+" "+f2+" "+minTime+"ms");
         return minTime;
     }
 
@@ -257,16 +269,20 @@ public class SEM {
 //        double tb = cateNum*0.025; //TODO 常数,先按论文里给的常数复现论文的结果
 //        double t = Math.pow(f*1.96,2)*(Math.exp(ni*1.0/f)-1)*(tb+f2*0.4)/(f2*Math.pow(alpha*ni,2));
         // TODO 按论文里给的常数复现论文的结果
-        double tb = cateNum*0.0188; //TODO 常数,先按论文里给的常数复现论文的结果
-        double t = Math.pow(f*1.96,2.0)*(Math.exp(ni*1.0/f)-1)*(tb+f2*0.302)/(f2*Math.pow(alpha*ni,2.0));
+        //TODO 常数,先按论文里给的常数复现论文的结果
+        double t_lambda = 0.302+cateNum*0.0188;//the duration of each slot
+        double t_ksi = 8*t_lambda;//the time the reader takes to transmit the ksi-bit parameters for frame initialization
+        double t = Math.pow(f*1.96,2.0)*(Math.exp(ni*1.0/f)-1)*(t_ksi+f2*t_lambda)/(f2*Math.pow(alpha*ni,2.0));
         return t;
     }
 
     private double getTimeFirstOrder(int f,int f2,int ni) {
 //        double tb = cateNum*0.025; // TODO 常数,
 //        double t = (tb+f2*0.4)*1.96*1.96/(f2*(Math.pow(alpha*ni,2)))*(2*f*(Math.exp(ni*1.0/f)-1)-Math.exp(ni*1.0/f)*ni);
-        double tb = cateNum*0.0188; //TODO 常数,先按论文里给的常数复现论文的结果
-        double t = (tb+f2*0.302)*1.96*1.96/(f2*(Math.pow(alpha*ni,2.0)))*(2*f*(Math.exp(ni*1.0/f)-1)-Math.exp(ni*1.0/f)*ni);
+        //TODO 常数,先按论文里给的常数复现论文的结果
+        double t_lambda = 0.302+cateNum*0.0188;//the duration of each slot
+        double t_ksi = 8*t_lambda;//the time the reader takes to transmit the ksi-bit parameters for frame initialization
+        double t = (t_ksi+f2*t_lambda)*1.96*1.96*(2*f*(Math.exp(ni*1.0/f)-1)-Math.exp(ni*1.0/f)*ni)/(f2*Math.pow(alpha*ni,2.0));
         return t;
     }
 
